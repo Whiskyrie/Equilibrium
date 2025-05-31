@@ -141,15 +141,15 @@ export const IllustrationView: React.FC<IllustrationViewProps> = ({
             height: circleSize,
             borderRadius: circleSize / 2,
             backgroundColor: backgroundColor,
-            // 🌟 SOMBRA CORRIGIDA - AGORA REALMENTE EXTERNA
-            shadowColor: Colors.primary,
+            // 🌟 SOMBRA MOVIDA PARA AQUI - SOMBRA EXTERNA CORRETA
             shadowOffset: {
               width: 0,
-              height: 3, // Valor positivo para sombra abaixo
+              height: shadowOffset * 2, // Sombra mais pronunciada
             },
-            shadowRadius: 6, // Blur mais suave
-            shadowOpacity: 0.15, // Opacity muito sutil
-            elevation: 4, // Android shadow
+            shadowRadius: shadowOffset * 4, // Blur mais suave
+            shadowOpacity: 0.2, // Opacity ajustada
+            shadowColor: Colors.primary,
+            elevation: shadowOffset * 1.5, // Android shadow
           },
         ]}
       >
@@ -178,8 +178,8 @@ export const IllustrationView: React.FC<IllustrationViewProps> = ({
               style={[
                 styles.logoImage,
                 {
-                  width: innerCircleSize * 0.7, // ✅ AJUSTADO para melhor proporção
-                  height: innerCircleSize * 0.7,
+                  width: innerCircleSize * 0.8,
+                  height: innerCircleSize * 0.8,
                 },
               ]}
               resizeMode="contain"
@@ -224,14 +224,18 @@ const styles = StyleSheet.create({
     // GESTALT - SIMETRIA: Centralização em ambos os eixos
     justifyContent: "center",
     alignItems: "center",
-    // Container limpo, sem sombras
+    // 🌟 SOMBRA DO CONTAINER REMOVIDA - evita dupla sombra
   },
 
   outerCircle: {
     // GESTALT - FECHAMENTO: Forma circular completa
     justifyContent: "center",
     alignItems: "center",
-    // ✅ CORRIGIDO: Sem sombra interna, apenas externa
+    backgroundColor: Colors.background,
+
+    // 🎯 SOMBRA AGORA ESTÁ AQUI NO LUGAR CORRETO
+    // Sombra externa que cria profundidade sem interferir no conteúdo
+    // Valores serão definidos dinamicamente no componente
   },
 
   innerCircle: {
@@ -240,7 +244,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
 
-    // ✅ CORRIGIDO: Sem sombra nem borda interna
+    // 🌟 SOMBRA INTERNA REMOVIDA - elimina o efeito de "buraco"
+    // Agora o círculo interno é limpo e sem interferências visuais
   },
 
   iconText: {
@@ -291,12 +296,12 @@ export const OnboardingIllustration: React.FC = () => {
 
   return (
     <IllustrationView
-      size={width * 0.55} // ✅ AJUSTADO: Tamanho mais proporcional
+      size={width * 0.65}
       useImage={hasLogo}
       imageSource={hasLogo ? logoSource : undefined}
       iconContent="🧘‍♀️"
       animationDelay={300}
-      backgroundColor={Colors.secondary}
+      backgroundColor={Colors.secondary} // 🌟 MUDADO: volta pro secondary para ter contraste
       testID="onboarding-illustration"
     />
   );

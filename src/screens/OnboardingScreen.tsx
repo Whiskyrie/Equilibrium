@@ -2,32 +2,31 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
-  FlatList,
-  Dimensions,
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
+  StatusBar,
   Animated,
-  Easing,
-  Alert,
-  BackHandler,
+  Dimensions,
+  FlatList,
 } from "react-native";
-import { Heart, Leaf, ChartLine } from "phosphor-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Heart, ChartLine, Leaf } from "phosphor-react-native";
+import { CustomButton } from "../components/CustomButton";
 import { Colors } from "../styles/colors";
 import { AppDimensions } from "../constants/dimensions";
-import { CustomButton } from "../components/CustomButton";
+import { TextStyles } from "../styles/typography";
 
 const { width } = Dimensions.get("window");
 
 interface OnboardingScreenProps {
   onComplete: () => void;
-  isFirstTime?: boolean;
+  isFirstTime?: boolean; // ✅ ADICIONAR PROP
 }
 
 interface OnboardingPage {
   title: string;
   subtitle: string;
-  IconComponent: any;
+  IconComponent: React.ComponentType<any>;
   iconColor: string;
 }
 
@@ -50,415 +49,389 @@ const onboardingPages: OnboardingPage[] = [
     title: "Acompanhe Seu Progresso",
     subtitle:
       "Registre sua jornada e veja como pequenos passos levam a grandes mudanças.",
-    IconComponent: ChartLine, // ✅ PHOSPHOR CORRETO
+    IconComponent: ChartLine,
     iconColor: Colors.primary,
   },
 ];
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   onComplete,
-  isFirstTime = true,
+  isFirstTime = true, // ✅ VALOR PADRÃO
 }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  // ✨ ANIMAÇÕES PREMIUM
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const iconFloatAnim = useRef(new Animated.Value(0)).current;
-  const confettiAnim = useRef(new Animated.Value(0)).current;
+  // ✨ ANIMAÇÕES PARA TRANSIÇÕES SUAVES
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const iconScaleAnim = useRef(new Animated.Value(1)).current;
 
-  // 🎭 ANIMAÇÃO DE ENTRADA ELABORADA
+  // ✨ ANIMAÇÃO DO ÍCONE QUANDO MUDA DE TELA
   useEffect(() => {
-    animatePageEntry();
-  }, [currentPage]);
-
-  const animatePageEntry = () => {
-    // Reset animations
-    fadeAnim.setValue(0);
-    slideAnim.setValue(50);
-    scaleAnim.setValue(0.8);
-
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
+    Animated.sequence([
+      Animated.timing(iconScaleAnim, {
+        toValue: 1.1,
+        duration: 300,
         useNativeDriver: true,
       }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        easing: Easing.out(Easing.back(1.2)),
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
+      Animated.timing(iconScaleAnim, {
         toValue: 1,
-        duration: 700,
-        easing: Easing.out(Easing.elastic(1)),
+        duration: 200,
         useNativeDriver: true,
       }),
     ]).start();
+  }, [currentIndex]);
 
-    // 🌊 ANIMAÇÃO FLUTUANTE CONTÍNUA DO ÍCONE
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(iconFloatAnim, {
-          toValue: 10,
-          duration: 2000,
-          easing: Easing.inOut(Easing.sin),
+  const handleNext = () => {
+    if (currentIndex < onboardingPages.length - 1) {
+      // Animação de saída suave
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0.7,
+          duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(iconFloatAnim, {
-          toValue: 0,
-          duration: 2000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  };
-
-  // 🔙 TRATAMENTO DE BOTÃO VOLTAR ANDROID
-  useEffect(() => {
-    const backAction = () => {
-      if (currentPage === 0) {
-        Alert.alert(
-          "Sair do Onboarding?",
-          "Você pode continuar de onde parou depois.",
-          [
-            { text: "Continuar", style: "cancel" },
-            {
-              text: "Sair",
-              style: "destructive",
-              onPress: () => BackHandler.exitApp(),
-            },
-          ]
-        );
-        return true;
-      } else {
-        handlePrevious();
-        return true;
-      }
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-    return () => backHandler.remove();
-  }, [currentPage]);
-
-  // 📱 SUPORTE A DIFERENTES TAMANHOS DE TELA
-  const getResponsiveValues = () => {
-    const { isSmall, isMedium } = AppDimensions.screen;
-
-    return {
-      iconSize: isSmall ? width * 0.25 : isMedium ? width * 0.3 : width * 0.35,
-      titleSize: isSmall ? 22 : isMedium ? 26 : 30,
-      spacing: isSmall ? 16 : isMedium ? 24 : 32,
-    };
-  };
-
-  // 🔄 RETRY AUTOMÁTICO EM CASO DE ERRO
-  const handleCompleteWithRetry = async (retries = 3) => {
-    try {
-      await onComplete();
-    } catch (error) {
-      if (retries > 0) {
-        console.log(`Tentativa falhou, restam ${retries} tentativas`);
-        setTimeout(() => handleCompleteWithRetry(retries - 1), 1000);
-      } else {
-        Alert.alert(
-          "Erro de Conexão",
-          "Não foi possível salvar seu progresso. Deseja tentar novamente?",
-          [
-            {
-              text: "Tentar Novamente",
-              onPress: () => handleCompleteWithRetry(3),
-            },
-            { text: "Continuar Mesmo Assim", onPress: () => onComplete() },
-          ]
-        );
-      }
-    }
-  };
-
-  // 🎉 CELEBRAÇÃO FINAL APENAS PARA PRIMEIRA VEZ
-  const handleFinalStep = () => {
-    if (isFirstTime) {
-      setShowCelebration(true);
-
-      // 🎊 ANIMAÇÃO DE CONFETE
-      Animated.sequence([
-        Animated.timing(confettiAnim, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.out(Easing.bounce),
-          useNativeDriver: true,
-        }),
-        Animated.timing(confettiAnim, {
-          toValue: 0,
-          duration: 500,
-          delay: 1500,
+        Animated.timing(slideAnim, {
+          toValue: -50,
+          duration: 200,
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setShowCelebration(false);
-        handleCompleteWithRetry();
+        flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
+        setCurrentIndex(currentIndex + 1);
+
+        // Animação de entrada
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
       });
     } else {
-      handleCompleteWithRetry();
+      onComplete();
     }
   };
 
-  const handleNext = () => {
-    if (currentPage < onboardingPages.length - 1) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      flatListRef.current?.scrollToIndex({ index: nextPage, animated: true });
+  const handleBack = () => {
+    if (currentIndex > 0) {
+      // Animação similar para voltar
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0.7,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 50,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        flatListRef.current?.scrollToIndex({ index: currentIndex - 1 });
+        setCurrentIndex(currentIndex - 1);
+
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
     }
   };
 
-  const handlePrevious = () => {
-    if (currentPage > 0) {
-      const prevPage = currentPage - 1;
-      setCurrentPage(prevPage);
-      flatListRef.current?.scrollToIndex({ index: prevPage, animated: true });
-    }
-  };
-
-  // 🌟 COMPONENTE DE CELEBRAÇÃO
-  const renderCelebration = () => {
-    if (!showCelebration) return null;
-
-    return (
-      <Animated.View
-        style={[
-          styles.celebrationContainer,
-          {
-            opacity: confettiAnim,
-            transform: [
-              {
-                scale: confettiAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.5, 1],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <Text style={styles.celebrationText}>🎉</Text>
-        <Text style={styles.celebrationMessage}>
-          Parabéns! Sua jornada de bem-estar começou!
-        </Text>
-      </Animated.View>
-    );
-  };
-
-  const renderPage = ({
-    item,
-    index,
-  }: {
-    item: OnboardingPage;
-    index: number;
-  }) => {
-    const { IconComponent, title, subtitle, iconColor } = item;
-    const responsive = getResponsiveValues();
-
-    return (
-      <Animated.View
-        style={[
-          styles.pageContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-          },
-        ]}
-      >
+  const renderItem = ({ item }: { item: OnboardingPage }) => (
+    <Animated.View
+      style={[
+        styles.pageContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateX: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.heroSection}>
+        {/* ✨ NOVO: Círculo com ícone do Phosphor */}
         <Animated.View
           style={[
             styles.iconContainer,
-            { backgroundColor: `${iconColor}15` },
             {
-              transform: [{ translateY: iconFloatAnim }],
+              transform: [{ scale: iconScaleAnim }],
             },
           ]}
         >
-          <IconComponent size={responsive.iconSize} color={iconColor} />
+          <View
+            style={[styles.iconCircle, { backgroundColor: item.iconColor }]}
+          >
+            <item.IconComponent size={80} color="#FFFFFF" weight="light" />
+          </View>
         </Animated.View>
+      </View>
+      <View style={styles.textSection}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.subtitle}>{item.subtitle}</Text>
+      </View>
+    </Animated.View>
+  );
 
-        <Text style={[styles.title, { fontSize: responsive.titleSize }]}>
-          {title}
-        </Text>
-
-        <Text style={styles.subtitle}>{subtitle}</Text>
-      </Animated.View>
-    );
+  // ✅ EXEMPLO DE USO DO isFirstTime
+  const getWelcomeMessage = () => {
+    return isFirstTime ? "Bem-vindo ao Equilibrium" : "Bem-vindo de volta!";
   };
 
+  // ✅ PODE PERSONALIZAR EXPERIÊNCIA BASEADA EM isFirstTime
+  const shouldShowDetailedIntro = isFirstTime;
+  const animationDelay = isFirstTime ? 500 : 200; // Mais rápido para usuários recorrentes
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* REMOVEMOS OS INDICADORES DE PROGRESSO DO TOPO */}
-
-      <FlatList
-        ref={flatListRef}
-        data={onboardingPages}
-        renderItem={renderPage}
-        keyExtractor={(_, index) => index.toString()}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        scrollEnabled={false}
-        style={styles.flatList}
+    <>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={Colors.background}
+        translucent={false}
       />
-
-      {/* 🌟 INDICADORES DE PROGRESSO AGORA ACIMA DOS BOTÕES */}
-      <View style={styles.progressContainer}>
-        {onboardingPages.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.progressDot,
-              {
-                backgroundColor:
-                  index === currentPage ? Colors.primary : Colors.accent.muted,
-                width: index === currentPage ? 24 : 8, // ✅ Dot ativo é mais largo
-                opacity: index === currentPage ? 1 : 0.4, // ✅ Dots inativos mais sutis
-              },
-            ]}
+      <LinearGradient
+        colors={[Colors.background, "#EBF4F8"]}
+        style={styles.container}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <FlatList
+            ref={flatListRef}
+            data={onboardingPages}
+            renderItem={renderItem}
+            keyExtractor={(_, index) => index.toString()}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={false}
+            style={styles.flatList}
           />
-        ))}
-      </View>
 
-      <View style={styles.buttonContainer}>
-        {currentPage > 0 && (
-          <CustomButton
-            title="Voltar"
-            onPress={handlePrevious}
-            variant="tertiary"
-            size="medium"
-          />
-        )}
+          {/* ✨ PAGINAÇÃO MELHORADA (mantida) */}
+          <View style={styles.pagination}>
+            {onboardingPages.map((_, index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentIndex && styles.activeDot,
+                  {
+                    transform: [
+                      {
+                        scale: index === currentIndex ? 1 : 0.8,
+                      },
+                    ],
+                  },
+                ]}
+              />
+            ))}
+          </View>
 
-        <CustomButton
-          title={
-            currentPage === onboardingPages.length - 1
-              ? "Começar Jornada"
-              : "Próximo"
-          }
-          onPress={
-            currentPage === onboardingPages.length - 1
-              ? handleFinalStep
-              : handleNext
-          }
-          variant="primary"
-          size="medium"
-          fullWidth={currentPage === 0}
-        />
-      </View>
-
-      {renderCelebration()}
-    </SafeAreaView>
+          {/* ✨ LAYOUT DE BOTÕES */}
+          <View style={styles.ctaSection}>
+            <View
+              style={[
+                styles.buttonContainer,
+                currentIndex === 0 && styles.singleButtonContainer,
+              ]}
+            >
+              {currentIndex > 0 && (
+                <View style={styles.backButtonContainer}>
+                  <CustomButton
+                    title="Voltar"
+                    onPress={handleBack}
+                    variant="tertiary"
+                    size="medium"
+                    fullWidth={false}
+                    testID="onboarding-back-button"
+                  />
+                </View>
+              )}
+              <View
+                style={[
+                  styles.nextButtonContainer,
+                  currentIndex === 0 && styles.fullWidthButton,
+                ]}
+              >
+                <CustomButton
+                  title={
+                    currentIndex === onboardingPages.length - 1
+                      ? "Começar Jornada"
+                      : "Próximo"
+                  }
+                  onPress={handleNext}
+                  variant="primary"
+                  size="medium"
+                  fullWidth={true}
+                  testID="onboarding-next-button"
+                />
+              </View>
+            </View>
+            <Text style={styles.disclaimer}>
+              Gratuito • Sem cadastro obrigatório • Dados seguros
+            </Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  topSection: {
+    paddingHorizontal: AppDimensions.spacing.lg,
+    paddingTop: AppDimensions.spacing.md,
+    paddingBottom: AppDimensions.spacing.sm,
   },
   progressContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: AppDimensions.spacing.md, // ✅ Espaçamento reduzido
-    gap: AppDimensions.spacing.sm,
-    // ✅ Não está mais no topo
+    gap: AppDimensions.spacing.xs,
   },
-  progressDot: {
-    height: 8,
-    borderRadius: 4,
-    // ✅ width definida dinamicamente no componente
-    // ✅ Transição suave entre estados será feita via Animated
+  progressBar: {
+    width: "60%",
+    height: 3,
+    backgroundColor: Colors.accent.muted,
+    borderRadius: AppDimensions.radius.small,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: Colors.primary,
+    borderRadius: AppDimensions.radius.small,
+  },
+  progressText: {
+    ...TextStyles.caption,
+    color: Colors.accent.muted,
+    fontSize: 11,
   },
   flatList: {
     flex: 1,
   },
   pageContainer: {
-    width,
+    width: width,
     flex: 1,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: AppDimensions.spacing.lg,
+    paddingVertical: AppDimensions.spacing.lg, // ✨ Mais espaço vertical
+  },
+  heroSection: {
+    flex: 2.5, // ✨ Mais espaço para o ícone
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: AppDimensions.spacing.xl,
+    width: "100%",
   },
-  iconContainer: {
-    width: width * 0.4,
-    height: width * 0.4,
-    borderRadius: width * 0.2,
-    justifyContent: "center",
+  textSection: {
+    flex: 1.2, // ✨ Proporção ajustada
+    justifyContent: "flex-start",
     alignItems: "center",
-    marginBottom: AppDimensions.spacing.xl,
-    // ✅ SOMBRA PADRONIZADA - igual ao IllustrationView
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-    backgroundColor: "white", // ✅ Garante contraste com os ícones
+    width: "100%",
+    paddingHorizontal: AppDimensions.spacing.sm,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: Colors.text,
-    textAlign: "center",
-    marginBottom: AppDimensions.spacing.md,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.accent.muted,
-    textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: AppDimensions.spacing.md,
+  ctaSection: {
+    width: "100%",
+    alignItems: "center",
+    padding: AppDimensions.spacing.lg,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: AppDimensions.spacing.md,
     alignItems: "center",
-    paddingHorizontal: AppDimensions.spacing.xl,
-    paddingBottom: AppDimensions.spacing.xl,
-    gap: AppDimensions.spacing.md,
-    // ✅ Agora vem depois dos indicadores de progresso
   },
-  celebrationContainer: {
-    position: "absolute",
-    top: "40%",
-    left: 0,
-    right: 0,
+  singleButtonContainer: {
+    justifyContent: "center",
+  },
+  backButtonContainer: {
+    flex: 0.4, // 40% do espaço
+    marginRight: AppDimensions.spacing.sm,
+  },
+  nextButtonContainer: {
+    flex: 0.6, // 60% do espaço para o botão principal
+  },
+  fullWidthButton: {
+    flex: 1,
+  },
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    marginHorizontal: AppDimensions.spacing.xl,
-    padding: AppDimensions.spacing.xl,
-    borderRadius: AppDimensions.radius.large,
-    // 🌟 SOMBRA DE CELEBRAÇÃO AJUSTADA
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 }, // Reduzido de 8 para 6
-    shadowOpacity: 0.15, // Reduzido de 0.2 para 0.15
-    shadowRadius: 12, // Reduzido de 16 para 12
-    elevation: 10, // Reduzido de 12 para 10
+    marginBottom: AppDimensions.spacing.lg,
+    paddingVertical: AppDimensions.spacing.sm,
   },
-  celebrationText: {
-    fontSize: 48,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.accent.muted,
+    marginHorizontal: 6, // ✨ Mais espaço entre dots
+  },
+  activeDot: {
+    backgroundColor: Colors.primary,
+    width: 20, // ✨ Mais largo quando ativo
+    height: 8,
+    borderRadius: 4,
+  },
+  title: {
+    ...TextStyles.heroTitle,
     marginBottom: AppDimensions.spacing.md,
-  },
-  celebrationMessage: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.text,
     textAlign: "center",
+    lineHeight: AppDimensions.text.hero * 1.1, // ✨ Melhor espaçamento de linha
+  },
+  subtitle: {
+    ...TextStyles.bodySecondary,
+    textAlign: "center",
+    lineHeight: AppDimensions.text.body * 1.4, // ✨ Mais respiração no texto
+    marginBottom: AppDimensions.spacing.lg,
+    paddingHorizontal: AppDimensions.spacing.xs, // ✨ Padding interno
+  },
+  disclaimer: {
+    ...TextStyles.caption,
+    textAlign: "center",
+    marginTop: AppDimensions.spacing.md,
+    opacity: 0.7, // ✨ Menos opacidade para ser mais sutil
+    paddingHorizontal: AppDimensions.spacing.md,
+  },
+  // ✨ NOVOS ESTILOS PARA ÍCONOS
+  iconContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
