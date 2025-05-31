@@ -141,13 +141,15 @@ export const IllustrationView: React.FC<IllustrationViewProps> = ({
             height: circleSize,
             borderRadius: circleSize / 2,
             backgroundColor: backgroundColor,
-            // GESTALT - FIGURA/FUNDO: Sombra para destacar
+            // 🌟 SOMBRA CORRIGIDA - AGORA REALMENTE EXTERNA
+            shadowColor: Colors.primary,
             shadowOffset: {
               width: 0,
-              height: shadowOffset,
+              height: 3, // Valor positivo para sombra abaixo
             },
-            shadowRadius: shadowOffset * 2,
-            elevation: shadowOffset,
+            shadowRadius: 6, // Blur mais suave
+            shadowOpacity: 0.15, // Opacity muito sutil
+            elevation: 4, // Android shadow
           },
         ]}
       >
@@ -176,8 +178,8 @@ export const IllustrationView: React.FC<IllustrationViewProps> = ({
               style={[
                 styles.logoImage,
                 {
-                  width: innerCircleSize * 0.8, // ✅ AUMENTADO de 0.6 para 0.8
-                  height: innerCircleSize * 0.8,
+                  width: innerCircleSize * 0.7, // ✅ AJUSTADO para melhor proporção
+                  height: innerCircleSize * 0.7,
                 },
               ]}
               resizeMode="contain"
@@ -222,31 +224,23 @@ const styles = StyleSheet.create({
     // GESTALT - SIMETRIA: Centralização em ambos os eixos
     justifyContent: "center",
     alignItems: "center",
-    // Área responsiva para diferentes tamanhos
+    // Container limpo, sem sombras
   },
 
   outerCircle: {
     // GESTALT - FECHAMENTO: Forma circular completa
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.background, // ✅ MUDADO: fundo branco em vez de verde
-
-    // GESTALT - FIGURA/FUNDO: Destaque visual
-    shadowColor: Colors.primary, // Sombra azul harmoniosa
-    shadowOpacity: 0.15, // Sutil, não agressiva
-
-    // Compatibilidade Android
-    elevation: 8,
+    // ✅ CORRIGIDO: Sem sombra interna, apenas externa
   },
 
   innerCircle: {
     // GESTALT - PROXIMIDADE: Relacionado ao círculo externo
-    backgroundColor: Colors.background, // ✅ MANTIDO: Branco nuvem para respiração
+    backgroundColor: Colors.background,
     justifyContent: "center",
     alignItems: "center",
 
-    // ✅ REMOVIDO: borderWidth que criava contorno verde
-    // Sem borda para logo ficar limpa
+    // ✅ CORRIGIDO: Sem sombra nem borda interna
   },
 
   iconText: {
@@ -297,12 +291,12 @@ export const OnboardingIllustration: React.FC = () => {
 
   return (
     <IllustrationView
-      size={width * 0.65} // ✅ AUMENTADO de 0.6 para 0.65 (logo maior)
-      useImage={hasLogo} // Usa imagem se logo existir
+      size={width * 0.55} // ✅ AJUSTADO: Tamanho mais proporcional
+      useImage={hasLogo}
       imageSource={hasLogo ? logoSource : undefined}
-      iconContent="🧘‍♀️" // Fallback emoji
+      iconContent="🧘‍♀️"
       animationDelay={300}
-      backgroundColor={Colors.background} // ✅ MUDADO: fundo branco
+      backgroundColor={Colors.secondary}
       testID="onboarding-illustration"
     />
   );

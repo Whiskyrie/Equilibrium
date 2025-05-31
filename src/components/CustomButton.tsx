@@ -140,14 +140,15 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: "center",
     alignItems: "center",
+    // 🌟 SOMBRA DOS BOTÕES AJUSTADA - mais sutil e profissional
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 2, // Mantido baixo para sutileza
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08, // Reduzido de 0.1 para 0.08
+    shadowRadius: 3, // Reduzido de 4 para 3
+    elevation: 2, // Reduzido de 3 para 2
     marginVertical: AppDimensions.spacing.xs,
   },
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   Easing,
   Alert,
   BackHandler,
-  AccessibilityInfo,
 } from "react-native";
 import { Heart, Leaf, ChartLine } from "phosphor-react-native";
 import { Colors } from "../styles/colors";
@@ -51,7 +50,7 @@ const onboardingPages: OnboardingPage[] = [
     title: "Acompanhe Seu Progresso",
     subtitle:
       "Registre sua jornada e veja como pequenos passos levam a grandes mudanças.",
-    IconComponent: ChartLine,
+    IconComponent: ChartLine, // ✅ PHOSPHOR CORRETO
     iconColor: Colors.primary,
   },
 ];
@@ -180,10 +179,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               text: "Tentar Novamente",
               onPress: () => handleCompleteWithRetry(3),
             },
-            {
-              text: "Continuar Mesmo Assim",
-              onPress: () => onComplete(),
-            },
+            { text: "Continuar Mesmo Assim", onPress: () => onComplete() },
           ]
         );
       }
@@ -218,21 +214,11 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     }
   };
 
-  // 📢 ANÚNCIOS PARA SCREEN READERS
-  const announcePageChange = (pageIndex: number) => {
-    const page = onboardingPages[pageIndex];
-    const announcement = `Página ${pageIndex + 1} de ${
-      onboardingPages.length
-    }. ${page.title}. ${page.subtitle}`;
-    AccessibilityInfo.announceForAccessibility(announcement);
-  };
-
   const handleNext = () => {
     if (currentPage < onboardingPages.length - 1) {
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
       flatListRef.current?.scrollToIndex({ index: nextPage, animated: true });
-      announcePageChange(nextPage);
     }
   };
 
@@ -241,7 +227,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       const prevPage = currentPage - 1;
       setCurrentPage(prevPage);
       flatListRef.current?.scrollToIndex({ index: prevPage, animated: true });
-      announcePageChange(prevPage);
     }
   };
 
@@ -293,9 +278,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
           },
         ]}
-        accessible={true}
-        accessibilityLabel={`${title}. ${subtitle}`}
-        accessibilityRole="main"
       >
         <Animated.View
           style={[
@@ -319,38 +301,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   return (
-    <SafeAreaView
-      style={styles.container}
-      accessibilityLabel="Tela de Onboarding do Equilibrium"
-      accessibilityHint="Deslize para navegar entre as páginas de introdução"
-    >
-      {/* 📱 INDICADOR DE PROGRESSO ACESSÍVEL */}
-      <View
-        style={styles.progressContainer}
-        accessibilityRole="progressbar"
-        accessibilityValue={{
-          min: 0,
-          max: onboardingPages.length,
-          now: currentPage + 1,
-        }}
-        accessibilityLabel={`Progresso: ${currentPage + 1} de ${
-          onboardingPages.length
-        }`}
-      >
-        {onboardingPages.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.progressDot,
-              {
-                backgroundColor:
-                  index === currentPage ? Colors.primary : Colors.accent.muted,
-                transform: [{ scale: index === currentPage ? 1.2 : 1 }],
-              },
-            ]}
-          />
-        ))}
-      </View>
+    <SafeAreaView style={styles.container}>
+      {/* REMOVEMOS OS INDICADORES DE PROGRESSO DO TOPO */}
 
       <FlatList
         ref={flatListRef}
@@ -364,6 +316,24 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         style={styles.flatList}
       />
 
+      {/* 🌟 INDICADORES DE PROGRESSO AGORA ACIMA DOS BOTÕES */}
+      <View style={styles.progressContainer}>
+        {onboardingPages.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.progressDot,
+              {
+                backgroundColor:
+                  index === currentPage ? Colors.primary : Colors.accent.muted,
+                width: index === currentPage ? 24 : 8, // ✅ Dot ativo é mais largo
+                opacity: index === currentPage ? 1 : 0.4, // ✅ Dots inativos mais sutis
+              },
+            ]}
+          />
+        ))}
+      </View>
+
       <View style={styles.buttonContainer}>
         {currentPage > 0 && (
           <CustomButton
@@ -371,7 +341,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             onPress={handlePrevious}
             variant="tertiary"
             size="medium"
-            accessibilityLabel={`Voltar para página ${currentPage} de ${onboardingPages.length}`}
           />
         )}
 
@@ -389,12 +358,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           variant="primary"
           size="medium"
           fullWidth={currentPage === 0}
-          accessibilityLabel={
-            currentPage === onboardingPages.length - 1
-              ? "Finalizar onboarding e começar a usar o app"
-              : `Ir para página ${currentPage + 2} de ${onboardingPages.length}`
-          }
-          accessibilityHint="Toque duplo para continuar"
         />
       </View>
 
@@ -412,13 +375,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: AppDimensions.spacing.lg,
+    paddingVertical: AppDimensions.spacing.md, // ✅ Espaçamento reduzido
     gap: AppDimensions.spacing.sm,
+    // ✅ Não está mais no topo
   },
   progressDot: {
-    width: 8,
     height: 8,
     borderRadius: 4,
+    // ✅ width definida dinamicamente no componente
+    // ✅ Transição suave entre estados será feita via Animated
   },
   flatList: {
     flex: 1,
@@ -437,11 +402,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: AppDimensions.spacing.xl,
+    // ✅ SOMBRA PADRONIZADA - igual ao IllustrationView
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 6,
+    elevation: 4,
+    backgroundColor: "white", // ✅ Garante contraste com os ícones
   },
   title: {
     fontSize: 28,
@@ -465,6 +432,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: AppDimensions.spacing.xl,
     paddingBottom: AppDimensions.spacing.xl,
     gap: AppDimensions.spacing.md,
+    // ✅ Agora vem depois dos indicadores de progresso
   },
   celebrationContainer: {
     position: "absolute",
@@ -476,11 +444,12 @@ const styles = StyleSheet.create({
     marginHorizontal: AppDimensions.spacing.xl,
     padding: AppDimensions.spacing.xl,
     borderRadius: AppDimensions.radius.large,
+    // 🌟 SOMBRA DE CELEBRAÇÃO AJUSTADA
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 6 }, // Reduzido de 8 para 6
+    shadowOpacity: 0.15, // Reduzido de 0.2 para 0.15
+    shadowRadius: 12, // Reduzido de 16 para 12
+    elevation: 10, // Reduzido de 12 para 10
   },
   celebrationText: {
     fontSize: 48,
