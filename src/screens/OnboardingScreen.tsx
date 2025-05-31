@@ -1,32 +1,34 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
+  FlatList,
+  Dimensions,
   StyleSheet,
   SafeAreaView,
-  StatusBar,
-  Animated,
-  Dimensions,
-  FlatList,
   TouchableOpacity,
+  Animated,
+  Easing,
+  Alert,
+  BackHandler,
+  AccessibilityInfo,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Heart, ChartLine, Leaf } from "phosphor-react-native";
-import { CustomButton } from "../components/CustomButton";
+import { Heart, Leaf, ChartLine } from "phosphor-react-native";
 import { Colors } from "../styles/colors";
 import { AppDimensions } from "../constants/dimensions";
-import { TextStyles } from "../styles/typography";
+import { CustomButton } from "../components/CustomButton";
 
 const { width } = Dimensions.get("window");
 
 interface OnboardingScreenProps {
   onComplete: () => void;
+  isFirstTime?: boolean;
 }
 
 interface OnboardingPage {
   title: string;
   subtitle: string;
-  IconComponent: React.ComponentType<any>;
+  IconComponent: any;
   iconColor: string;
 }
 
@@ -56,372 +58,438 @@ const onboardingPages: OnboardingPage[] = [
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   onComplete,
+  isFirstTime = true,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [showCelebration, setShowCelebration] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // ✨ ANIMAÇÕES PARA TRANSIÇÕES SUAVES
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const iconScaleAnim = useRef(new Animated.Value(1)).current;
+  // ✨ ANIMAÇÕES PREMIUM
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const iconFloatAnim = useRef(new Animated.Value(0)).current;
+  const confettiAnim = useRef(new Animated.Value(0)).current;
 
-  // ✨ ANIMAÇÃO DO ÍCONE QUANDO MUDA DE TELA
+  // 🎭 ANIMAÇÃO DE ENTRADA ELABORADA
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(iconScaleAnim, {
-        toValue: 1.1,
-        duration: 300,
+    animatePageEntry();
+  }, [currentPage]);
+
+  const animatePageEntry = () => {
+    // Reset animations
+    fadeAnim.setValue(0);
+    slideAnim.setValue(50);
+    scaleAnim.setValue(0.8);
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(iconScaleAnim, {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
         toValue: 1,
-        duration: 200,
+        duration: 700,
+        easing: Easing.out(Easing.elastic(1)),
         useNativeDriver: true,
       }),
     ]).start();
-  }, [currentIndex]);
 
-  const handleNext = () => {
-    if (currentIndex < onboardingPages.length - 1) {
-      // Animação de saída suave
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0.7,
-          duration: 200,
+    // 🌊 ANIMAÇÃO FLUTUANTE CONTÍNUA DO ÍCONE
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(iconFloatAnim, {
+          toValue: 10,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
-        Animated.timing(slideAnim, {
-          toValue: -50,
-          duration: 200,
+        Animated.timing(iconFloatAnim, {
+          toValue: 0,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  };
+
+  // 🔙 TRATAMENTO DE BOTÃO VOLTAR ANDROID
+  useEffect(() => {
+    const backAction = () => {
+      if (currentPage === 0) {
+        Alert.alert(
+          "Sair do Onboarding?",
+          "Você pode continuar de onde parou depois.",
+          [
+            { text: "Continuar", style: "cancel" },
+            {
+              text: "Sair",
+              style: "destructive",
+              onPress: () => BackHandler.exitApp(),
+            },
+          ]
+        );
+        return true;
+      } else {
+        handlePrevious();
+        return true;
+      }
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+    return () => backHandler.remove();
+  }, [currentPage]);
+
+  // 📱 SUPORTE A DIFERENTES TAMANHOS DE TELA
+  const getResponsiveValues = () => {
+    const { isSmall, isMedium } = AppDimensions.screen;
+
+    return {
+      iconSize: isSmall ? width * 0.25 : isMedium ? width * 0.3 : width * 0.35,
+      titleSize: isSmall ? 22 : isMedium ? 26 : 30,
+      spacing: isSmall ? 16 : isMedium ? 24 : 32,
+    };
+  };
+
+  // 🔄 RETRY AUTOMÁTICO EM CASO DE ERRO
+  const handleCompleteWithRetry = async (retries = 3) => {
+    try {
+      await onComplete();
+    } catch (error) {
+      if (retries > 0) {
+        console.log(`Tentativa falhou, restam ${retries} tentativas`);
+        setTimeout(() => handleCompleteWithRetry(retries - 1), 1000);
+      } else {
+        Alert.alert(
+          "Erro de Conexão",
+          "Não foi possível salvar seu progresso. Deseja tentar novamente?",
+          [
+            {
+              text: "Tentar Novamente",
+              onPress: () => handleCompleteWithRetry(3),
+            },
+            {
+              text: "Continuar Mesmo Assim",
+              onPress: () => onComplete(),
+            },
+          ]
+        );
+      }
+    }
+  };
+
+  // 🎉 CELEBRAÇÃO FINAL APENAS PARA PRIMEIRA VEZ
+  const handleFinalStep = () => {
+    if (isFirstTime) {
+      setShowCelebration(true);
+
+      // 🎊 ANIMAÇÃO DE CONFETE
+      Animated.sequence([
+        Animated.timing(confettiAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.out(Easing.bounce),
+          useNativeDriver: true,
+        }),
+        Animated.timing(confettiAnim, {
+          toValue: 0,
+          duration: 500,
+          delay: 1500,
           useNativeDriver: true,
         }),
       ]).start(() => {
-        flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-        setCurrentIndex(currentIndex + 1);
-
-        // Animação de entrada
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        setShowCelebration(false);
+        handleCompleteWithRetry();
       });
     } else {
-      onComplete();
+      handleCompleteWithRetry();
     }
   };
 
-  const handleBack = () => {
-    if (currentIndex > 0) {
-      // Animação similar para voltar
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0.7,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 50,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        flatListRef.current?.scrollToIndex({ index: currentIndex - 1 });
-        setCurrentIndex(currentIndex - 1);
+  // 📢 ANÚNCIOS PARA SCREEN READERS
+  const announcePageChange = (pageIndex: number) => {
+    const page = onboardingPages[pageIndex];
+    const announcement = `Página ${pageIndex + 1} de ${
+      onboardingPages.length
+    }. ${page.title}. ${page.subtitle}`;
+    AccessibilityInfo.announceForAccessibility(announcement);
+  };
 
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
+  const handleNext = () => {
+    if (currentPage < onboardingPages.length - 1) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      flatListRef.current?.scrollToIndex({ index: nextPage, animated: true });
+      announcePageChange(nextPage);
     }
   };
 
-  const renderItem = ({ item }: { item: OnboardingPage }) => (
-    <Animated.View
-      style={[
-        styles.pageContainer,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateX: slideAnim }],
-        },
-      ]}
-    >
-      <View style={styles.heroSection}>
-        {/* ✨ NOVO: Círculo com ícone do Phosphor */}
+  const handlePrevious = () => {
+    if (currentPage > 0) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      flatListRef.current?.scrollToIndex({ index: prevPage, animated: true });
+      announcePageChange(prevPage);
+    }
+  };
+
+  // 🌟 COMPONENTE DE CELEBRAÇÃO
+  const renderCelebration = () => {
+    if (!showCelebration) return null;
+
+    return (
+      <Animated.View
+        style={[
+          styles.celebrationContainer,
+          {
+            opacity: confettiAnim,
+            transform: [
+              {
+                scale: confettiAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.5, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <Text style={styles.celebrationText}>🎉</Text>
+        <Text style={styles.celebrationMessage}>
+          Parabéns! Sua jornada de bem-estar começou!
+        </Text>
+      </Animated.View>
+    );
+  };
+
+  const renderPage = ({
+    item,
+    index,
+  }: {
+    item: OnboardingPage;
+    index: number;
+  }) => {
+    const { IconComponent, title, subtitle, iconColor } = item;
+    const responsive = getResponsiveValues();
+
+    return (
+      <Animated.View
+        style={[
+          styles.pageContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+          },
+        ]}
+        accessible={true}
+        accessibilityLabel={`${title}. ${subtitle}`}
+        accessibilityRole="main"
+      >
         <Animated.View
           style={[
             styles.iconContainer,
+            { backgroundColor: `${iconColor}15` },
             {
-              transform: [{ scale: iconScaleAnim }],
+              transform: [{ translateY: iconFloatAnim }],
             },
           ]}
         >
-          <View
-            style={[styles.iconCircle, { backgroundColor: item.iconColor }]}
-          >
-            <item.IconComponent size={80} color="#FFFFFF" weight="light" />
-          </View>
+          <IconComponent size={responsive.iconSize} color={iconColor} />
         </Animated.View>
-      </View>
-      <View style={styles.textSection}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
-      </View>
-    </Animated.View>
-  );
+
+        <Text style={[styles.title, { fontSize: responsive.titleSize }]}>
+          {title}
+        </Text>
+
+        <Text style={styles.subtitle}>{subtitle}</Text>
+      </Animated.View>
+    );
+  };
 
   return (
-    <>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={Colors.background}
-        translucent={false}
-      />
-      <LinearGradient
-        colors={[Colors.background, "#EBF4F8"]}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+    <SafeAreaView
+      style={styles.container}
+      accessibilityLabel="Tela de Onboarding do Equilibrium"
+      accessibilityHint="Deslize para navegar entre as páginas de introdução"
+    >
+      {/* 📱 INDICADOR DE PROGRESSO ACESSÍVEL */}
+      <View
+        style={styles.progressContainer}
+        accessibilityRole="progressbar"
+        accessibilityValue={{
+          min: 0,
+          max: onboardingPages.length,
+          now: currentPage + 1,
+        }}
+        accessibilityLabel={`Progresso: ${currentPage + 1} de ${
+          onboardingPages.length
+        }`}
       >
-        <SafeAreaView style={styles.safeArea}>
-          <FlatList
-            ref={flatListRef}
-            data={onboardingPages}
-            renderItem={renderItem}
-            keyExtractor={(_, index) => index.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={false}
-            style={styles.flatList}
+        {onboardingPages.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.progressDot,
+              {
+                backgroundColor:
+                  index === currentPage ? Colors.primary : Colors.accent.muted,
+                transform: [{ scale: index === currentPage ? 1.2 : 1 }],
+              },
+            ]}
           />
+        ))}
+      </View>
 
-          {/* ✨ PAGINAÇÃO MELHORADA (mantida) */}
-          <View style={styles.pagination}>
-            {onboardingPages.map((_, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.dot,
-                  index === currentIndex && styles.activeDot,
-                  {
-                    transform: [
-                      {
-                        scale: index === currentIndex ? 1 : 0.8,
-                      },
-                    ],
-                  },
-                ]}
-              />
-            ))}
-          </View>
+      <FlatList
+        ref={flatListRef}
+        data={onboardingPages}
+        renderItem={renderPage}
+        keyExtractor={(_, index) => index.toString()}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEnabled={false}
+        style={styles.flatList}
+      />
 
-          {/* ✨ LAYOUT DE BOTÕES */}
-          <View style={styles.ctaSection}>
-            <View
-              style={[
-                styles.buttonContainer,
-                currentIndex === 0 && styles.singleButtonContainer,
-              ]}
-            >
-              {currentIndex > 0 && (
-                <View style={styles.backButtonContainer}>
-                  <CustomButton
-                    title="Voltar"
-                    onPress={handleBack}
-                    variant="tertiary"
-                    size="medium"
-                    fullWidth={false}
-                    testID="onboarding-back-button"
-                  />
-                </View>
-              )}
-              <View
-                style={[
-                  styles.nextButtonContainer,
-                  currentIndex === 0 && styles.fullWidthButton,
-                ]}
-              >
-                <CustomButton
-                  title={
-                    currentIndex === onboardingPages.length - 1
-                      ? "Começar Jornada"
-                      : "Próximo"
-                  }
-                  onPress={handleNext}
-                  variant="primary"
-                  size="medium"
-                  fullWidth={true}
-                  testID="onboarding-next-button"
-                />
-              </View>
-            </View>
-            <Text style={styles.disclaimer}>
-              Gratuito • Sem cadastro obrigatório • Dados seguros
-            </Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
-    </>
+      <View style={styles.buttonContainer}>
+        {currentPage > 0 && (
+          <CustomButton
+            title="Voltar"
+            onPress={handlePrevious}
+            variant="tertiary"
+            size="medium"
+            accessibilityLabel={`Voltar para página ${currentPage} de ${onboardingPages.length}`}
+          />
+        )}
+
+        <CustomButton
+          title={
+            currentPage === onboardingPages.length - 1
+              ? "Começar Jornada"
+              : "Próximo"
+          }
+          onPress={
+            currentPage === onboardingPages.length - 1
+              ? handleFinalStep
+              : handleNext
+          }
+          variant="primary"
+          size="medium"
+          fullWidth={currentPage === 0}
+          accessibilityLabel={
+            currentPage === onboardingPages.length - 1
+              ? "Finalizar onboarding e começar a usar o app"
+              : `Ir para página ${currentPage + 2} de ${onboardingPages.length}`
+          }
+          accessibilityHint="Toque duplo para continuar"
+        />
+      </View>
+
+      {renderCelebration()}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  topSection: {
-    paddingHorizontal: AppDimensions.spacing.lg,
-    paddingTop: AppDimensions.spacing.md,
-    paddingBottom: AppDimensions.spacing.sm,
+    backgroundColor: Colors.background,
   },
   progressContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    gap: AppDimensions.spacing.xs,
+    paddingVertical: AppDimensions.spacing.lg,
+    gap: AppDimensions.spacing.sm,
   },
-  progressBar: {
-    width: "60%",
-    height: 3,
-    backgroundColor: Colors.accent.muted,
-    borderRadius: AppDimensions.radius.small,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: Colors.primary,
-    borderRadius: AppDimensions.radius.small,
-  },
-  progressText: {
-    ...TextStyles.caption,
-    color: Colors.accent.muted,
-    fontSize: 11,
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   flatList: {
     flex: 1,
   },
   pageContainer: {
-    width: width,
+    width,
     flex: 1,
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: AppDimensions.spacing.lg,
-    paddingVertical: AppDimensions.spacing.lg, // ✨ Mais espaço vertical
-  },
-  heroSection: {
-    flex: 2.5, // ✨ Mais espaço para o ícone
     justifyContent: "center",
     alignItems: "center",
-    width: "100%",
+    paddingHorizontal: AppDimensions.spacing.xl,
   },
-  textSection: {
-    flex: 1.2, // ✨ Proporção ajustada
-    justifyContent: "flex-start",
+  iconContainer: {
+    width: width * 0.4,
+    height: width * 0.4,
+    borderRadius: width * 0.2,
+    justifyContent: "center",
     alignItems: "center",
-    width: "100%",
-    paddingHorizontal: AppDimensions.spacing.sm,
+    marginBottom: AppDimensions.spacing.xl,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  ctaSection: {
-    width: "100%",
-    alignItems: "center",
-    padding: AppDimensions.spacing.lg,
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.text,
+    textAlign: "center",
+    marginBottom: AppDimensions.spacing.md,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: Colors.accent.muted,
+    textAlign: "center",
+    lineHeight: 24,
+    paddingHorizontal: AppDimensions.spacing.md,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
-    paddingHorizontal: AppDimensions.spacing.md,
     alignItems: "center",
+    paddingHorizontal: AppDimensions.spacing.xl,
+    paddingBottom: AppDimensions.spacing.xl,
+    gap: AppDimensions.spacing.md,
   },
-  singleButtonContainer: {
-    justifyContent: "center",
-  },
-  backButtonContainer: {
-    flex: 0.4, // 40% do espaço
-    marginRight: AppDimensions.spacing.sm,
-  },
-  nextButtonContainer: {
-    flex: 0.6, // 60% do espaço para o botão principal
-  },
-  fullWidthButton: {
-    flex: 1,
-  },
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "center",
+  celebrationContainer: {
+    position: "absolute",
+    top: "40%",
+    left: 0,
+    right: 0,
     alignItems: "center",
-    marginBottom: AppDimensions.spacing.lg,
-    paddingVertical: AppDimensions.spacing.sm,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent.muted,
-    marginHorizontal: 6, // ✨ Mais espaço entre dots
-  },
-  activeDot: {
-    backgroundColor: Colors.primary,
-    width: 20, // ✨ Mais largo quando ativo
-    height: 8,
-    borderRadius: 4,
-  },
-  title: {
-    ...TextStyles.heroTitle,
-    marginBottom: AppDimensions.spacing.md,
-    textAlign: "center",
-    lineHeight: AppDimensions.text.hero * 1.1, // ✨ Melhor espaçamento de linha
-  },
-  subtitle: {
-    ...TextStyles.bodySecondary,
-    textAlign: "center",
-    lineHeight: AppDimensions.text.body * 1.4, // ✨ Mais respiração no texto
-    marginBottom: AppDimensions.spacing.lg,
-    paddingHorizontal: AppDimensions.spacing.xs, // ✨ Padding interno
-  },
-  disclaimer: {
-    ...TextStyles.caption,
-    textAlign: "center",
-    marginTop: AppDimensions.spacing.md,
-    opacity: 0.7, // ✨ Menos opacidade para ser mais sutil
-    paddingHorizontal: AppDimensions.spacing.md,
-  },
-  // ✨ NOVOS ESTILOS PARA ÍCONOS
-  iconContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    marginHorizontal: AppDimensions.spacing.xl,
+    padding: AppDimensions.spacing.xl,
+    borderRadius: AppDimensions.radius.large,
     shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  celebrationText: {
+    fontSize: 48,
+    marginBottom: AppDimensions.spacing.md,
+  },
+  celebrationMessage: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    textAlign: "center",
   },
 });
