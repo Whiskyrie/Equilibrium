@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
+import { DashboardScreen } from "./src/screens/DashboardScreen"; // ✅ ADICIONAR IMPORT
 
 type AppState = "loading" | "onboarding" | "dashboard" | "meditation";
 
@@ -18,16 +19,13 @@ export default function App() {
       const hasSeenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
 
       if (hasSeenOnboarding) {
-        // ✅ Usuário já viu onboarding - vai direto para Dashboard
-        setCurrentScreen("dashboard");
+        setCurrentScreen("dashboard"); // ✅ VAI DIRETO PARA DASHBOARD
         setIsFirstTime(false);
       } else {
-        // ✅ Primeira vez - mostra onboarding
         setCurrentScreen("onboarding");
         setIsFirstTime(true);
       }
     } catch (error) {
-      // Fallback: mostra onboarding se houver erro
       console.log("Erro ao verificar AsyncStorage:", error);
       setCurrentScreen("onboarding");
       setIsFirstTime(true);
@@ -36,53 +34,53 @@ export default function App() {
 
   const handleOnboardingComplete = async () => {
     try {
-      // ✅ Marca que usuário já viu onboarding
       await AsyncStorage.setItem("hasSeenOnboarding", "true");
-      setCurrentScreen("dashboard");
+      setCurrentScreen("dashboard"); // ✅ NAVEGA PARA DASHBOARD
       setIsFirstTime(false);
     } catch (error) {
       console.log("Erro ao salvar estado do onboarding:", error);
-      setCurrentScreen("dashboard"); // Continua mesmo com erro
+      setCurrentScreen("dashboard"); // ✅ MESMO COM ERRO, VAI PARA DASHBOARD
       setIsFirstTime(false);
     }
   };
 
-  const navigateToScreen = (screen: AppState) => {
+  const navigateToScreen = (screen: AppState, params?: any) => {
+    console.log(`Navegando para: ${screen}`, params);
     setCurrentScreen(screen);
   };
 
   const renderCurrentScreen = () => {
     switch (currentScreen) {
       case "loading":
-        // TODO: Adicionar splash screen aqui
         return null;
 
       case "onboarding":
         return (
           <OnboardingScreen
-            onComplete={handleOnboardingComplete}
-            isFirstTime={isFirstTime} // ✅ USANDO isFirstTime
+            onComplete={handleOnboardingComplete} // ✅ CONECTADO
+            isFirstTime={isFirstTime}
           />
         );
 
       case "dashboard":
-        // TODO: Criar DashboardScreen
-        console.log("Navegando para Dashboard - Primeira vez:", isFirstTime); // ✅ USANDO isFirstTime
         return (
-          <OnboardingScreen onComplete={() => navigateToScreen("onboarding")} />
+          <DashboardScreen
+            userName="Maria" // ✅ PODE SER DINÂMICO FUTURAMENTE
+            onNavigate={navigateToScreen}
+          />
         );
 
       case "meditation":
-        // TODO: Criar MeditationScreen
+        // TODO: Implementar MeditationSessionScreen
         return (
-          <OnboardingScreen onComplete={() => navigateToScreen("onboarding")} />
+          <DashboardScreen userName="Maria" onNavigate={navigateToScreen} />
         );
 
       default:
         return (
           <OnboardingScreen
             onComplete={handleOnboardingComplete}
-            isFirstTime={isFirstTime} // ✅ USANDO isFirstTime
+            isFirstTime={isFirstTime}
           />
         );
     }

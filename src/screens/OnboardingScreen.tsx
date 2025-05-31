@@ -16,6 +16,7 @@ import { Heart, Leaf, ChartLine } from "phosphor-react-native";
 import { Colors } from "../styles/colors";
 import { AppDimensions } from "../constants/dimensions";
 import { CustomButton } from "../components/CustomButton";
+import { FontSizes, FontWeights, LineHeights } from "../styles/typography";
 
 const { width } = Dimensions.get("window");
 
@@ -405,32 +406,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: AppDimensions.spacing.xl,
   },
   iconContainer: {
-    // ✅ CONTAINER ÚNICO E SIMPLES
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: AppDimensions.spacing.xl,
-    // ✅ SOMBRA SUTIL E ÚNICA
+    marginBottom: AppDimensions.spacing.lg, // ← MUDANÇA: de xl (32px) para lg (24px)
+
+    // 🌟 SOMBRA MAIS DIRECIONADA - cria fluxo visual para baixo
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: {
+      width: 0,
+      height: 6, // ← MUDANÇA: de 4 para 6 (mais vertical)
+    },
+    shadowOpacity: 0.12, // ← MUDANÇA: de 0.1 para 0.12 (ligeiramente mais visível)
+    shadowRadius: 10, // ← MUDANÇA: de 8 para 10 (mais suave)
+    elevation: 6, // Android
   },
+
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: FontSizes.title,
+    fontWeight: FontWeights.bold,
     color: Colors.text,
     textAlign: "center",
-    marginBottom: AppDimensions.spacing.md,
-    letterSpacing: -0.5,
+    marginBottom: AppDimensions.spacing.sm, // ← MUDANÇA: de md (16px) para sm (8px)
+    paddingHorizontal: AppDimensions.spacing.md,
+    lineHeight: FontSizes.title * LineHeights.tight,
+
+    // 🌟 SOMBRA DE TEXTO SUPER SUTIL - conecta visualmente
+    textShadowColor: "rgba(34, 111, 156, 0.08)", // ← NOVA: primary com 8% opacity
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
+
   subtitle: {
-    fontSize: 16,
+    fontSize: FontSizes.body,
+    fontWeight: FontWeights.normal,
     color: Colors.accent.muted,
     textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: AppDimensions.spacing.md,
+    lineHeight: FontSizes.body * LineHeights.normal,
+    paddingHorizontal: AppDimensions.spacing.lg,
+    marginBottom: AppDimensions.spacing.xl, // ← MUDANÇA: garante conexão melhor com botões
   },
+
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
