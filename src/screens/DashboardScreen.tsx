@@ -57,43 +57,43 @@ const moodChartData = [
   {
     value: 3.2,
     label: "Seg",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "3.2",
   },
   {
     value: 4.1,
     label: "Ter",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "4.1",
   },
   {
     value: 2.8,
     label: "Qua",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "2.8",
   },
   {
     value: 2.1,
     label: "Qui",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "2.1",
   },
   {
     value: 4.8,
     label: "Sex",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "4.8",
   },
   {
     value: 3.9,
     label: "Sáb",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "3.9",
   },
   {
     value: 4.2,
     label: "Dom",
-    labelTextStyle: { color: Colors.accent.muted, fontSize: 10 },
+    labelTextStyle: { color: "#64748B", fontSize: 11 },
     dataPointText: "4.2",
     showDataPoint: true,
     dataPointColor: Colors.primary,
@@ -101,47 +101,47 @@ const moodChartData = [
   },
 ];
 
-// 😊 Opções de humor com ícones Phosphor (mantidas iguais)
+// 😊 Opções de humor com ícones Phosphor
 const moodOptions = [
   {
     id: 1,
     icon: SmileyXEyes,
     label: "Awful",
     color: "#FEE2E2",
-    textColor: "#EF4444",
-    iconColor: "#EF4444",
+    textColor: "#DC2626",
+    iconColor: "#DC2626",
   },
   {
     id: 2,
     icon: SmileySad,
     label: "Bad",
     color: "#FED7AA",
-    textColor: "#F97316",
-    iconColor: "#F97316",
+    textColor: "#EA580C",
+    iconColor: "#EA580C",
   },
   {
     id: 3,
     icon: SmileyMeh,
     label: "Okay",
     color: "#FEF3C7",
-    textColor: "#F59E0B",
-    iconColor: "#F59E0B",
+    textColor: "#D97706",
+    iconColor: "#D97706",
   },
   {
     id: 4,
     icon: Smiley,
     label: "Good",
     color: "#D1FAE5",
-    textColor: "#10B981",
-    iconColor: "#10B981",
+    textColor: "#059669",
+    iconColor: "#059669",
   },
   {
     id: 5,
     icon: SmileyWink,
     label: "Great",
     color: "#DBEAFE",
-    textColor: "#3B82F6",
-    iconColor: "#3B82F6",
+    textColor: "#2563EB",
+    iconColor: "#2563EB",
   },
 ];
 
@@ -151,7 +151,7 @@ const wellnessInsights = [
     id: 1,
     icon: Fire,
     iconColor: "#FFFFFF",
-    gradientColors: ["#FF6B6B", "#FF8E8E"] as const, // Vermelho suave para streak
+    gradientColors: ["#FF6B6B", "#FF8E8E"] as const,
     title: "Meditation Streak",
     value: "5",
     unit: "Days",
@@ -159,13 +159,13 @@ const wellnessInsights = [
     progress: 0.7,
     trend: "+2 from last week",
     trendIcon: ArrowUp,
-    trendColor: "#10B981",
+    trendColor: "#FFFFFF",
   },
   {
     id: 2,
     icon: Target,
     iconColor: "#FFFFFF",
-    gradientColors: ["#4ECDC4", "#44B8AC"] as const, // Verde-água para metas
+    gradientColors: ["#4ECDC4", "#44B8AC"] as const,
     title: "Weekly Goal",
     value: "4",
     unit: "/ 7 Days",
@@ -173,13 +173,13 @@ const wellnessInsights = [
     progress: 0.57,
     trend: "57% complete",
     trendIcon: TrendUp,
-    trendColor: "#F59E0B",
+    trendColor: "#FFFFFF",
   },
   {
     id: 3,
     icon: Clock,
     iconColor: "#FFFFFF",
-    gradientColors: ["#667EEA", "#764BA2"] as const, // Roxo para tempo
+    gradientColors: ["#667EEA", "#764BA2"] as const,
     title: "Total Time",
     value: "45",
     unit: "minutes",
@@ -187,13 +187,13 @@ const wellnessInsights = [
     progress: 0.9,
     trend: "+15 min from last week",
     trendIcon: ArrowUp,
-    trendColor: "#10B981",
+    trendColor: "#FFFFFF",
   },
   {
     id: 4,
     icon: Medal,
     iconColor: "#FFFFFF",
-    gradientColors: ["#F093FB", "#F5576C"] as const, // Rosa para conquistas
+    gradientColors: ["#F093FB", "#F5576C"] as const,
     title: "Achievements",
     value: "3",
     unit: "unlocked",
@@ -201,7 +201,7 @@ const wellnessInsights = [
     progress: 0.6,
     trend: "2 more to unlock",
     trendIcon: Lightning,
-    trendColor: "#F59E0B",
+    trendColor: "#FFFFFF",
   },
 ];
 
@@ -211,6 +211,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const progressAnims = useRef(
+    wellnessInsights.map(() => new Animated.Value(0))
+  ).current;
 
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
 
@@ -227,85 +230,94 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Animar as barras de progresso
+    progressAnims.forEach((anim, index) => {
+      Animated.timing(anim, {
+        toValue: wellnessInsights[index].progress,
+        duration: 1000,
+        delay: 600 + index * 100,
+        useNativeDriver: false,
+      }).start();
+    });
   }, []);
 
-  // 📊 Componente do Gráfico de Área com Gifted Charts (CORRIGIDO)
+  // 📊 Componente do Gráfico de Área com Gifted Charts
   const MoodChart: React.FC = () => {
     return (
       <View style={styles.chartContainer}>
         <LineChart
           data={moodChartData}
           width={width - AppDimensions.spacing.xl * 4}
-          height={140}
-          spacing={45}
-          initialSpacing={15}
-          endSpacing={15}
+          height={180} // Aumentado de 140 para 180
+          spacing={42}
+          initialSpacing={20}
+          endSpacing={20}
           adjustToWidth
           hideAxesAndRules
           hideYAxisText
           xAxisLabelTextStyle={{
-            color: Colors.accent.muted,
+            color: "#64748B",
             fontSize: 12,
-            fontWeight: "500",
+            fontWeight: "600",
           }}
           // 🎨 CONFIGURAÇÃO DE CORES DO GRÁFICO
-          color={Colors.primary} // Cor da linha principal
+          color={Colors.primary}
           thickness={3}
           // 🎨 ÁREA PREENCHIDA (GRADIENTE)
           areaChart
-          startFillColor={Colors.primary} // Cor inicial do gradiente
-          endFillColor="rgba(34, 111, 156, 0.1)" // Cor final do gradiente (mais transparente)
-          startOpacity={0.8}
-          endOpacity={0.2}
+          startFillColor={Colors.primary}
+          endFillColor="rgba(34, 111, 156, 0.05)"
+          startOpacity={0.6}
+          endOpacity={0.1}
           // 🎨 CURVA SUAVE
           curved
           // 🎨 PONTOS DE DADOS
-          dataPointsColor={Colors.primary}
-          dataPointsRadius={5}
+          dataPointsRadius={6}
           dataPointsWidth={2}
           dataPointsColor1={Colors.primary}
-          // 🎨 INTERATIVIDADE (SEM ERROS DE TYPESCRIPT)
+          // 🎨 INTERATIVIDADE
           focusEnabled
           showDataPointOnFocus
           showStripOnFocus
           showTextOnFocus
           stripColor={Colors.primary}
-          stripOpacity={0.5}
+          stripOpacity={0.3}
           stripWidth={2}
-          stripHeight={140}
-          // 🎨 CONFIGURAÇÃO CORRETA DO POINTER (SEM ERRO TS)
+          stripHeight={180}
+          // 🎨 CONFIGURAÇÃO DO POINTER
           pointerConfig={{
-            pointerStripHeight: 140,
+            pointerStripHeight: 180,
             pointerStripColor: Colors.primary,
             pointerStripWidth: 2,
             strokeDashArray: [2, 5],
             pointerColor: Colors.primary,
-            radius: 4,
+            radius: 6,
             pointerLabelWidth: 100,
             pointerLabelHeight: 120,
             activatePointersOnLongPress: false,
-            autoAdjustPointerLabelPosition: false,
+            autoAdjustPointerLabelPosition: true,
             pointerLabelComponent: (items: any) => {
               return (
                 <View style={styles.pointerLabel}>
                   <Text style={styles.pointerLabelText}>
-                    {items[0]?.value || "0"}
+                    {items[0]?.value?.toFixed(1) || "0"}
                   </Text>
                 </View>
               );
             },
           }}
           // 🎨 TEXTO DOS PONTOS
-          textShiftY={-8}
+          textShiftY={-10}
           textShiftX={-10}
-          textFontSize={10}
-          textColor={Colors.text}
+          textFontSize={11}
+          textColor="#1F2937"
         />
       </View>
     );
   };
 
-  // 😊 Seletor de Humor (mantido igual)
+  // 😊 Seletor de Humor
   const MoodSelector: React.FC = () => {
     return (
       <View style={styles.moodSelectorContainer}>
@@ -416,10 +428,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         style={[
                           styles.progressFill,
                           {
-                            width: fadeAnim.interpolate({
+                            width: progressAnims[index].interpolate({
                               inputRange: [0, 1],
-                              outputRange: ["0%", `${insight.progress * 100}%`],
+                              outputRange: ["0%", "100%"],
                             }),
+                            transform: [
+                              {
+                                scaleX: progressAnims[index],
+                              },
+                            ],
                           },
                         ]}
                       />
@@ -453,39 +470,39 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     );
   };
 
-  // 🚀 Quick Actions (mantido)
+  // 🚀 Quick Actions
   const QuickActions: React.FC = () => {
     const quickActions = [
       {
         icon: FlowerLotus,
         label: "Meditate",
-        color: Colors.primary,
+        color: "#226F9C",
         bgColor: "rgba(34, 111, 156, 0.1)",
       },
       {
         icon: Heart,
         label: "Breathe",
-        color: "#EF4444",
-        bgColor: "rgba(239, 68, 68, 0.1)",
+        color: "#DC2626",
+        bgColor: "rgba(220, 38, 38, 0.1)",
       },
       {
         icon: Leaf,
         label: "Nature",
-        color: "#10B981",
-        bgColor: "rgba(16, 185, 129, 0.1)",
+        color: "#059669",
+        bgColor: "rgba(5, 150, 105, 0.1)",
       },
       {
         icon: Pulse,
         label: "Track",
-        color: "#F59E0B",
-        bgColor: "rgba(245, 158, 11, 0.1)",
+        color: "#D97706",
+        bgColor: "rgba(217, 119, 6, 0.1)",
       },
     ];
 
     return (
       <View style={styles.quickActionsContainer}>
         <View style={styles.quickActionsHeader}>
-          <Target size={20} color={Colors.text} weight="duotone" />
+          <Target size={20} color="#1F2937" weight="duotone" />
           <Text style={styles.quickActionsTitle}>Quick Actions</Text>
         </View>
 
@@ -508,7 +525,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   color={action.color}
                   weight="duotone"
                 />
-                <Text style={styles.quickActionLabel}>{action.label}</Text>
+                <Text
+                  style={[styles.quickActionLabel, { color: action.color }]}
+                >
+                  {action.label}
+                </Text>
               </Pressable>
             );
           })}
@@ -534,7 +555,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <Text style={styles.headerTitle}>My Wellbeing</Text>
         </View>
         <Pressable style={styles.settingsButton}>
-          <Gear size={24} color={Colors.text} weight="light" />
+          <Gear size={24} color="#1F2937" weight="light" />
         </Pressable>
       </Animated.View>
 
@@ -581,11 +602,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Text style={styles.averageLabel}>Average: </Text>
               <Text style={styles.averageValue}>3.5</Text>
               <View style={styles.trendIndicator}>
-                <TrendUp
-                  size={16}
-                  color={Colors.accent.success}
-                  weight="bold"
-                />
+                <TrendUp size={16} color="#059669" weight="bold" />
                 <Text style={styles.trendPercentage}>10%</Text>
               </View>
             </View>
@@ -631,17 +648,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </Pressable>
 
         <Pressable style={styles.navItem}>
-          <ChartLine size={24} color={Colors.accent.muted} weight="light" />
+          <ChartLine size={24} color="#94A3B8" weight="light" />
           <Text style={styles.navLabel}>Track</Text>
         </Pressable>
 
         <Pressable style={styles.navItem}>
-          <Users size={24} color={Colors.accent.muted} weight="light" />
+          <Users size={24} color="#94A3B8" weight="light" />
           <Text style={styles.navLabel}>Community</Text>
         </Pressable>
 
         <Pressable style={styles.navItem}>
-          <User size={24} color={Colors.accent.muted} weight="light" />
+          <User size={24} color="#94A3B8" weight="light" />
           <Text style={styles.navLabel}>Profile</Text>
         </Pressable>
       </View>
@@ -649,7 +666,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   );
 };
 
-// Estilos com melhorias para o gráfico e pointer label
+// Estilos com melhorias
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -674,7 +691,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   settingsButton: {
@@ -689,11 +706,11 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingHorizontal: AppDimensions.spacing.xl,
-    paddingBottom: AppDimensions.spacing.xxl,
+    paddingBottom: 100, // Aumentado para dar mais espaço no bottom
   },
 
   sectionContainer: {
-    marginBottom: AppDimensions.spacing.lg,
+    marginBottom: AppDimensions.spacing.xl, // Aumentado de lg para xl
   },
 
   // Quick Actions
@@ -711,7 +728,7 @@ const styles = StyleSheet.create({
   quickActionsTitle: {
     fontSize: FontSizes.subtitle,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   quickActionsList: {
@@ -730,7 +747,6 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     fontSize: FontSizes.small,
     fontWeight: FontWeights.medium,
-    color: Colors.text,
     textAlign: "center",
   },
 
@@ -739,11 +755,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: AppDimensions.radius.large,
     padding: AppDimensions.spacing.xl,
-    marginBottom: AppDimensions.spacing.lg,
-    shadowColor: "rgba(0, 0, 0, 0.05)",
+    marginBottom: AppDimensions.spacing.xl, // Aumentado
+    shadowColor: "rgba(0, 0, 0, 0.08)",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
-    shadowRadius: 12,
+    shadowRadius: 16,
     elevation: 4,
   },
 
@@ -757,7 +773,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: FontSizes.title,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   moodTrendContainer: {
@@ -774,24 +790,24 @@ const styles = StyleSheet.create({
   trendLabel: {
     fontSize: FontSizes.body,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   trendPeriod: {
     fontSize: FontSizes.caption,
-    color: Colors.accent.muted,
+    color: "#64748B",
   },
 
   averageContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: AppDimensions.spacing.lg,
+    marginBottom: AppDimensions.spacing.xl, // Aumentado
   },
 
   averageLabel: {
     fontSize: 32,
     fontWeight: FontWeights.normal,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   averageValue: {
@@ -805,7 +821,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     marginLeft: AppDimensions.spacing.sm,
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    backgroundColor: "rgba(5, 150, 105, 0.1)",
     paddingHorizontal: AppDimensions.spacing.sm,
     paddingVertical: 4,
     borderRadius: AppDimensions.radius.small,
@@ -814,25 +830,25 @@ const styles = StyleSheet.create({
   trendPercentage: {
     fontSize: FontSizes.caption,
     fontWeight: FontWeights.semibold,
-    color: Colors.accent.success,
+    color: "#059669",
   },
 
-  // 📊 CHART CONTAINER APRIMORADO
+  // 📊 CHART CONTAINER
   chartContainer: {
-    height: 160,
+    height: 200, // Aumentado de 160 para 200
     marginBottom: AppDimensions.spacing.md,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: AppDimensions.spacing.sm,
+    paddingHorizontal: AppDimensions.spacing.xs,
   },
 
-  // 🎯 POINTER LABEL PARA INTERATIVIDADE
+  // 🎯 POINTER LABEL
   pointerLabel: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: AppDimensions.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: AppDimensions.radius.small,
-    shadowColor: "rgba(0, 0, 0, 0.1)",
+    paddingHorizontal: AppDimensions.spacing.md,
+    paddingVertical: 8,
+    borderRadius: AppDimensions.radius.medium,
+    shadowColor: "rgba(0, 0, 0, 0.15)",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 4,
@@ -841,7 +857,7 @@ const styles = StyleSheet.create({
 
   pointerLabelText: {
     color: "#FFFFFF",
-    fontSize: FontSizes.small,
+    fontSize: FontSizes.body,
     fontWeight: FontWeights.semibold,
   },
 
@@ -850,10 +866,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: AppDimensions.radius.large,
     padding: AppDimensions.spacing.xl,
-    shadowColor: "rgba(0, 0, 0, 0.05)",
+    shadowColor: "rgba(0, 0, 0, 0.08)",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 2,
   },
 
@@ -867,7 +883,7 @@ const styles = StyleSheet.create({
   moodQuestion: {
     fontSize: FontSizes.title,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   moodGrid: {
@@ -904,7 +920,7 @@ const styles = StyleSheet.create({
 
   // Wellness Insights
   insightContainer: {
-    marginBottom: AppDimensions.spacing.lg,
+    marginBottom: AppDimensions.spacing.xl,
   },
 
   insightHeader: {
@@ -917,18 +933,18 @@ const styles = StyleSheet.create({
   insightTitle: {
     fontSize: FontSizes.title,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
+    color: "#1F2937",
   },
 
   insightGrid: {
     gap: AppDimensions.spacing.md,
   },
 
-  // Cards de Insight com Gradientes Específicos
+  // Cards de Insight
   insightCard: {
     borderRadius: AppDimensions.radius.large,
     overflow: "hidden",
-    shadowColor: "rgba(0, 0, 0, 0.1)",
+    shadowColor: "rgba(0, 0, 0, 0.12)",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -950,7 +966,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: AppDimensions.spacing.md,
@@ -969,7 +985,7 @@ const styles = StyleSheet.create({
 
   insightCardSubtitle: {
     fontSize: FontSizes.small,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "rgba(255, 255, 255, 0.85)",
   },
 
   insightValueContainer: {
@@ -1007,6 +1023,7 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#FFFFFF",
     borderRadius: 3,
+    transformOrigin: "left center",
   },
 
   insightFooter: {
@@ -1019,7 +1036,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     paddingHorizontal: AppDimensions.spacing.sm,
     paddingVertical: 4,
     borderRadius: AppDimensions.radius.small,
@@ -1037,7 +1054,11 @@ const styles = StyleSheet.create({
     paddingVertical: AppDimensions.spacing.md,
     paddingHorizontal: AppDimensions.spacing.xl,
     borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
+    borderTopColor: "#E5E7EB",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 
   navItem: {
@@ -1055,7 +1076,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -1068,6 +1089,6 @@ const styles = StyleSheet.create({
 
   navLabel: {
     fontSize: FontSizes.small,
-    color: Colors.accent.muted,
+    color: "#94A3B8",
   },
 });
