@@ -11,36 +11,38 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { LineChart } from "react-native-gifted-charts";
+// ✅ NOVA IMPORTAÇÃO - React Native Reanimated Carousel
+import Carousel from "react-native-reanimated-carousel";
 import {
-  FlowerLotus,
-  TrendUp,
-  Gear,
-  ChartLine,
-  CalendarDots,
-  Heart,
-  House,
-  Users,
-  User,
-  Pulse,
-  Smiley,
-  SmileyMeh,
-  SmileySad,
+  Brain,
+  CheckCircle,
   SmileyXEyes,
+  SmileySad,
+  SmileyMeh,
+  Smiley,
   SmileyWink,
   Fire,
-  Clock,
   Target,
-  Sparkle,
-  Brain,
-  Leaf,
-  ArrowUp,
+  Clock,
   Medal,
+  ArrowUp,
+  TrendUp,
   Lightning,
-  CheckCircle,
+  FlowerLotus,
+  Heart,
+  Leaf,
+  Pulse,
+  Gear,
+  House,
+  ChartLine,
+  User,
+  Bell,
 } from "phosphor-react-native";
+
+// Assumindo que estes imports existem - ajuste conforme sua estrutura
 import { Colors } from "../styles/colors";
-import { FontSizes, FontWeights } from "../styles/typography";
 import { AppDimensions } from "../constants/dimensions";
+import { FontSizes, FontWeights } from "../styles/typography";
 import { EQHaptics } from "../constants/feedback";
 
 const { width } = Dimensions.get("window");
@@ -101,47 +103,57 @@ const moodChartData = [
   },
 ];
 
-// 😊 Opções de humor com ícones Phosphor
+// 😊 Opções de humor com ícones Phosphor (dados atualizados)
 const moodOptions = [
   {
     id: 1,
     icon: SmileyXEyes,
     label: "Awful",
+    emoji: "😵",
     color: "#FEE2E2",
     textColor: "#DC2626",
     iconColor: "#DC2626",
+    gradientColors: ["#FEE2E2", "#FECACA"] as const,
   },
   {
     id: 2,
     icon: SmileySad,
     label: "Bad",
+    emoji: "😔",
     color: "#FED7AA",
     textColor: "#EA580C",
     iconColor: "#EA580C",
+    gradientColors: ["#FED7AA", "#FDBA74"] as const,
   },
   {
     id: 3,
     icon: SmileyMeh,
     label: "Okay",
+    emoji: "😐",
     color: "#FEF3C7",
     textColor: "#D97706",
     iconColor: "#D97706",
+    gradientColors: ["#FEF3C7", "#FDE68A"] as const,
   },
   {
     id: 4,
     icon: Smiley,
     label: "Good",
+    emoji: "😊",
     color: "#D1FAE5",
     textColor: "#059669",
     iconColor: "#059669",
+    gradientColors: ["#D1FAE5", "#A7F3D0"] as const,
   },
   {
     id: 5,
     icon: SmileyWink,
     label: "Great",
+    emoji: "😄",
     color: "#DBEAFE",
     textColor: "#2563EB",
     iconColor: "#2563EB",
+    gradientColors: ["#DBEAFE", "#BFDBFE"] as const,
   },
 ];
 
@@ -216,17 +228,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   ).current;
 
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
+  const [autoScrollInsightsActive, setAutoScrollInsightsActive] =
+    useState(true);
+  const [autoScrollMoodActive, setAutoScrollMoodActive] = useState(true);
+  const insightsCarouselRef = useRef<any>(null);
+  const moodCarouselRef = useRef<any>(null);
+  const insightsAutoScrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const moodAutoScrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
+      Animated.spring(fadeAnim, {
         toValue: 1,
-        duration: 600,
+        speed: 12,
+        bounciness: 0,
         useNativeDriver: true,
       }),
-      Animated.timing(slideAnim, {
+      Animated.spring(slideAnim, {
         toValue: 0,
-        duration: 800,
+        speed: 12,
+        bounciness: 0,
         useNativeDriver: true,
       }),
     ]).start();
@@ -242,229 +263,265 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     });
   }, []);
 
+  // Auto-scroll para insights
+  useEffect(() => {
+    if (autoScrollInsightsActive && insightsCarouselRef.current) {
+      const interval = setInterval(() => {
+        insightsCarouselRef.current?.next();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [autoScrollInsightsActive]);
+
+  // Auto-scroll para humor
+  useEffect(() => {
+    if (autoScrollMoodActive && moodCarouselRef.current) {
+      const interval = setInterval(() => {
+        moodCarouselRef.current?.next();
+      }, 3500);
+      return () => clearInterval(interval);
+    }
+  }, [autoScrollMoodActive]);
+
+  const handleInsightCarouselTouch = () => {
+    setAutoScrollInsightsActive(false);
+    if (insightsAutoScrollTimeout.current)
+      clearTimeout(insightsAutoScrollTimeout.current);
+    insightsAutoScrollTimeout.current = setTimeout(() => {
+      setAutoScrollInsightsActive(true);
+    }, 5000);
+  };
+
+  const handleMoodCarouselTouch = () => {
+    setAutoScrollMoodActive(false);
+    if (moodAutoScrollTimeout.current)
+      clearTimeout(moodAutoScrollTimeout.current);
+    moodAutoScrollTimeout.current = setTimeout(() => {
+      setAutoScrollMoodActive(true);
+    }, 5000);
+  };
+
   // 📊 Componente do Gráfico de Área com Gifted Charts
   const MoodChart: React.FC = () => {
     return (
       <View style={styles.chartContainer}>
         <LineChart
           data={moodChartData}
-          width={width - AppDimensions.spacing.xl * 4}
-          height={180} // Aumentado de 140 para 180
-          spacing={42}
-          initialSpacing={20}
-          endSpacing={20}
-          adjustToWidth
-          hideAxesAndRules
-          hideYAxisText
-          xAxisLabelTextStyle={{
-            color: "#64748B",
-            fontSize: 12,
-            fontWeight: "600",
-          }}
-          // 🎨 CONFIGURAÇÃO DE CORES DO GRÁFICO
+          width={width - 80}
+          height={160}
+          spacing={40}
           color={Colors.primary}
           thickness={3}
-          // 🎨 ÁREA PREENCHIDA (GRADIENTE)
-          areaChart
-          startFillColor={Colors.primary}
+          startFillColor="rgba(34, 111, 156, 0.3)"
           endFillColor="rgba(34, 111, 156, 0.05)"
-          startOpacity={0.6}
-          endOpacity={0.1}
-          // 🎨 CURVA SUAVE
+          startOpacity={1}
+          endOpacity={0.3}
+          initialSpacing={0}
+          noOfSections={5}
+          maxValue={5}
+          yAxisColor="transparent"
+          xAxisColor="transparent"
+          hideDataPoints={false}
+          dataPointsColor={Colors.primary}
+          dataPointsRadius={4}
+          hideRules
           curved
-          // 🎨 PONTOS DE DADOS
-          dataPointsRadius={6}
-          dataPointsWidth={2}
-          dataPointsColor1={Colors.primary}
-          // 🎨 INTERATIVIDADE
-          focusEnabled
-          showDataPointOnFocus
-          showStripOnFocus
-          showTextOnFocus
-          stripColor={Colors.primary}
-          stripOpacity={0.3}
-          stripWidth={2}
-          stripHeight={180}
-          // 🎨 CONFIGURAÇÃO DO POINTER
-          pointerConfig={{
-            pointerStripHeight: 180,
-            pointerStripColor: Colors.primary,
-            pointerStripWidth: 2,
-            strokeDashArray: [2, 5],
-            pointerColor: Colors.primary,
-            radius: 6,
-            pointerLabelWidth: 100,
-            pointerLabelHeight: 120,
-            activatePointersOnLongPress: false,
-            autoAdjustPointerLabelPosition: true,
-            pointerLabelComponent: (items: any) => {
-              return (
-                <View style={styles.pointerLabel}>
-                  <Text style={styles.pointerLabelText}>
-                    {items[0]?.value?.toFixed(1) || "0"}
-                  </Text>
-                </View>
-              );
-            },
-          }}
-          // 🎨 TEXTO DOS PONTOS
-          textShiftY={-10}
-          textShiftX={-10}
-          textFontSize={11}
-          textColor="#1F2937"
+          areaChart
         />
       </View>
     );
   };
 
-  // 😊 Seletor de Humor
+  // 😊 Seletor de Humor ATUALIZADO
   const MoodSelector: React.FC = () => {
+    const renderMoodItem = ({ item, index }: { item: any; index: number }) => {
+      const IconComponent = item.icon;
+      const isSelected = selectedMood === item.id;
+
+      return (
+        <Pressable
+          style={[
+            styles.moodCarouselItem,
+            isSelected && styles.moodCarouselItemSelected,
+          ]}
+          onPress={() => {
+            setSelectedMood(item.id);
+            EQHaptics.gentle(); // Haptic feedback habilitado
+          }}
+        >
+          <LinearGradient
+            colors={item.gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.moodItemGradient,
+              isSelected && styles.moodItemGradientSelected,
+            ]}
+          >
+            <View style={styles.moodIconContainer}>
+              <Text style={styles.moodEmoji}>{item.emoji}</Text>
+              <IconComponent
+                size={28}
+                color={item.iconColor}
+                weight={isSelected ? "duotone" : "light"}
+              />
+            </View>
+            <Text
+              style={[
+                styles.moodCarouselLabel,
+                { color: item.textColor },
+                isSelected && styles.moodCarouselLabelSelected,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </LinearGradient>
+        </Pressable>
+      );
+    };
+
     return (
       <View style={styles.moodSelectorContainer}>
         <View style={styles.moodQuestionHeader}>
-          <Brain size={24} color={Colors.primary} weight="duotone" />
-          <Text style={styles.moodQuestion}>How are you feeling?</Text>
+          <Brain size={20} color={Colors.primary} weight="duotone" />
+          <Text style={styles.moodQuestion}>How are you feeling today?</Text>
         </View>
 
-        <View style={styles.moodGrid}>
-          {moodOptions.map((mood) => {
-            const IconComponent = mood.icon;
-            return (
-              <Pressable
-                key={mood.id}
-                style={[
-                  styles.moodOption,
-                  { backgroundColor: mood.color },
-                  selectedMood === mood.id && styles.moodOptionSelected,
-                ]}
-                onPress={() => {
-                  setSelectedMood(mood.id);
-                  EQHaptics.gentle();
-                }}
-              >
-                <IconComponent
-                  size={32}
-                  color={mood.iconColor}
-                  weight="duotone"
-                />
-                <Text style={[styles.moodLabel, { color: mood.textColor }]}>
-                  {mood.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+        <View style={styles.moodCarouselWrapper}>
+          <Carousel
+            ref={moodCarouselRef}
+            loop={true}
+            width={120}
+            height={130}
+            data={moodOptions}
+            scrollAnimationDuration={300}
+            mode="parallax"
+            modeConfig={{
+              parallaxScrollingScale: 0.85,
+              parallaxScrollingOffset: 80,
+            }}
+            autoPlay={autoScrollMoodActive}
+            autoPlayInterval={3500}
+            renderItem={renderMoodItem}
+            style={styles.moodCarousel}
+            onScrollEnd={handleMoodCarouselTouch}
+          />
         </View>
+
+        {selectedMood && (
+          <Animated.View style={styles.moodSelectedFeedback}>
+            <CheckCircle size={16} color={Colors.primary} weight="duotone" />
+            <Text style={styles.moodSelectedText}>
+              Feeling{" "}
+              {moodOptions
+                .find((m) => m.id === selectedMood)
+                ?.label.toLowerCase()}{" "}
+              today
+            </Text>
+          </Animated.View>
+        )}
       </View>
     );
   };
 
-  // 🏆 Cards de Insight com Gradientes Específicos
+  // 🏆 Cards de Insight - Carrossel Infinito
   const WellnessInsights: React.FC = () => {
+    const renderInsightCard = ({
+      item,
+      index,
+    }: {
+      item: any;
+      index: number;
+    }) => {
+      const IconComponent = item.icon;
+      const TrendIconComponent = item.trendIcon;
+
+      return (
+        <View style={styles.insightCard}>
+          <LinearGradient
+            colors={item.gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.insightCardGradient}
+          >
+            <View style={styles.insightCardHeader}>
+              <View style={styles.insightIconContainer}>
+                <IconComponent
+                  size={24}
+                  color={item.iconColor}
+                  weight="duotone"
+                />
+              </View>
+              <View style={styles.insightCardInfo}>
+                <Text style={styles.insightCardTitle}>{item.title}</Text>
+                <Text style={styles.insightCardSubtitle}>{item.subtitle}</Text>
+              </View>
+            </View>
+
+            <View style={styles.insightValueContainer}>
+              <Text style={styles.insightMainValue}>{item.value}</Text>
+              <Text style={styles.insightValueUnit}>{item.unit}</Text>
+            </View>
+
+            <View style={styles.progressContainer}>
+              <View style={styles.progressTrack}>
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: progressAnims[index]?.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0%", `${item.progress * 100}%`],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            <View style={styles.insightFooter}>
+              <View style={styles.trendContainer}>
+                <TrendIconComponent
+                  size={12}
+                  color={item.trendColor}
+                  weight="bold"
+                />
+                <Text style={[styles.trendText, { color: item.trendColor }]}>
+                  {item.trend}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+      );
+    };
+
     return (
       <View style={styles.insightContainer}>
         <View style={styles.insightHeader}>
-          <Sparkle size={24} color={Colors.primary} weight="duotone" />
+          <Fire size={24} color={Colors.primary} weight="duotone" />
           <Text style={styles.insightTitle}>Wellness Insights</Text>
         </View>
 
-        <View style={styles.insightGrid}>
-          {wellnessInsights.map((insight, index) => {
-            const IconComponent = insight.icon;
-            const TrendIconComponent = insight.trendIcon;
-
-            return (
-              <Animated.View
-                key={insight.id}
-                style={[
-                  styles.insightCard,
-                  {
-                    opacity: fadeAnim,
-                    transform: [
-                      {
-                        translateY: slideAnim.interpolate({
-                          inputRange: [0, 20],
-                          outputRange: [0, 20 + index * 10],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <LinearGradient
-                  colors={insight.gradientColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.insightCardGradient}
-                >
-                  {/* Header do Card */}
-                  <View style={styles.insightCardHeader}>
-                    <View style={styles.insightIconContainer}>
-                      <IconComponent
-                        size={24}
-                        color={insight.iconColor}
-                        weight="duotone"
-                      />
-                    </View>
-                    <View style={styles.insightCardInfo}>
-                      <Text style={styles.insightCardTitle}>
-                        {insight.title}
-                      </Text>
-                      <Text style={styles.insightCardSubtitle}>
-                        {insight.subtitle}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Valor Principal */}
-                  <View style={styles.insightValueContainer}>
-                    <Text style={styles.insightMainValue}>{insight.value}</Text>
-                    <Text style={styles.insightValueUnit}>{insight.unit}</Text>
-                  </View>
-
-                  {/* Barra de Progresso */}
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressTrack}>
-                      <Animated.View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: progressAnims[index].interpolate({
-                              inputRange: [0, 1],
-                              outputRange: ["0%", "100%"],
-                            }),
-                            transform: [
-                              {
-                                scaleX: progressAnims[index],
-                              },
-                            ],
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Trend Footer */}
-                  <View style={styles.insightFooter}>
-                    <View style={styles.trendContainer}>
-                      <TrendIconComponent
-                        size={14}
-                        color={insight.trendColor}
-                        weight="bold"
-                      />
-                      <Text
-                        style={[
-                          styles.trendText,
-                          { color: insight.trendColor },
-                        ]}
-                      >
-                        {insight.trend}
-                      </Text>
-                    </View>
-                  </View>
-                </LinearGradient>
-              </Animated.View>
-            );
-          })}
+        <View style={styles.insightCarouselWrapper}>
+          <Carousel
+            ref={insightsCarouselRef}
+            loop
+            width={width * 0.75} // 75% da largura da tela
+            height={180}
+            data={wellnessInsights}
+            scrollAnimationDuration={500}
+            autoPlay={autoScrollInsightsActive}
+            autoPlayInterval={3000}
+            mode="parallax"
+            modeConfig={{
+              parallaxScrollingScale: 0.9,
+              parallaxScrollingOffset: 50,
+            }}
+            renderItem={renderInsightCard}
+            onScrollEnd={handleInsightCarouselTouch}
+            style={styles.insightCarousel}
+          />
         </View>
       </View>
     );
@@ -502,10 +559,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return (
       <View style={styles.quickActionsContainer}>
         <View style={styles.quickActionsHeader}>
-          <Target size={20} color="#1F2937" weight="duotone" />
+          <Lightning size={20} color={Colors.primary} weight="duotone" />
           <Text style={styles.quickActionsTitle}>Quick Actions</Text>
         </View>
-
         <View style={styles.quickActionsList}>
           {quickActions.map((action, index) => {
             const IconComponent = action.icon;
@@ -518,6 +574,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 ]}
                 onPress={() => {
                   EQHaptics.gentle();
+                  if (action.label === "Meditate") {
+                    onNavigate("meditation");
+                  }
                 }}
               >
                 <IconComponent
@@ -540,7 +599,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <Animated.View
         style={[
           styles.header,
@@ -551,67 +609,48 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         ]}
       >
         <View style={styles.headerLeft}>
-          <Heart size={28} color={Colors.primary} weight="duotone" />
-          <Text style={styles.headerTitle}>My Wellbeing</Text>
+          <Text style={styles.headerTitle}>Hello, {userName}!</Text>
         </View>
         <Pressable style={styles.settingsButton}>
-          <Gear size={24} color="#1F2937" weight="light" />
+          <Gear size={24} color="#64748B" weight="light" />
         </Pressable>
       </Animated.View>
 
       <ScrollView
         style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 20 }]}
       >
-        {/* Quick Actions */}
-        <Animated.View
-          style={[
-            styles.sectionContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <QuickActions />
-        </Animated.View>
+        <QuickActions />
 
-        {/* Mood Tracker Card com Gráfico de Área */}
-        <Animated.View
-          style={[
-            styles.moodTrackerCard,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
+        <View style={styles.sectionSpacer} />
+
+        <View style={styles.moodTrackerCard}>
           <View style={styles.cardHeader}>
             <ChartLine size={24} color={Colors.primary} weight="duotone" />
-            <Text style={styles.cardTitle}>Mood Tracker</Text>
+            <Text style={styles.cardTitle}>Mood Tracking</Text>
           </View>
 
           <View style={styles.moodTrendContainer}>
             <View style={styles.trendHeader}>
-              <Text style={styles.trendLabel}>Mood Trend</Text>
-              <Text style={styles.trendPeriod}>Last 7 Days</Text>
+              <Text style={styles.trendLabel}>Weekly Average</Text>
+              <Text style={styles.trendPeriod}>Last 7 days</Text>
             </View>
-
             <View style={styles.averageContainer}>
-              <Text style={styles.averageLabel}>Average: </Text>
-              <Text style={styles.averageValue}>3.5</Text>
+              <Text style={styles.averageLabel}>Your mood: </Text>
+              <Text style={styles.averageValue}>3.6</Text>
               <View style={styles.trendIndicator}>
-                <TrendUp size={16} color="#059669" weight="bold" />
-                <Text style={styles.trendPercentage}>10%</Text>
+                <ArrowUp size={12} color="#059669" weight="bold" />
+                <Text style={styles.trendPercentage}>12%</Text>
               </View>
             </View>
-
-            <MoodChart />
           </View>
-        </Animated.View>
 
-        {/* Mood Selector */}
+          <MoodChart />
+        </View>
+
+        <View style={styles.sectionSpacer} />
+
+        {/* Mood Selector ATUALIZADO */}
         <Animated.View
           style={[
             styles.sectionContainer,
@@ -624,21 +663,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <MoodSelector />
         </Animated.View>
 
-        {/* Wellness Insights */}
-        <Animated.View
-          style={[
-            styles.sectionContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <WellnessInsights />
-        </Animated.View>
+        <View style={styles.sectionSpacer} />
+
+        <WellnessInsights />
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <Pressable style={styles.navItem}>
           <View style={styles.navIconActive}>
@@ -648,17 +679,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </Pressable>
 
         <Pressable style={styles.navItem}>
-          <ChartLine size={24} color="#94A3B8" weight="light" />
-          <Text style={styles.navLabel}>Track</Text>
+          <ChartLine size={20} color="#94A3B8" weight="light" />
+          <Text style={styles.navLabel}>Analytics</Text>
         </Pressable>
 
         <Pressable style={styles.navItem}>
-          <Users size={24} color="#94A3B8" weight="light" />
-          <Text style={styles.navLabel}>Community</Text>
+          <Bell size={20} color="#94A3B8" weight="light" />
+          <Text style={styles.navLabel}>Reminders</Text>
         </Pressable>
 
         <Pressable style={styles.navItem}>
-          <User size={24} color="#94A3B8" weight="light" />
+          <User size={20} color="#94A3B8" weight="light" />
           <Text style={styles.navLabel}>Profile</Text>
         </Pressable>
       </View>
@@ -666,7 +697,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   );
 };
 
-// Estilos com melhorias
+// ✅ ESTILOS ATUALIZADOS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -678,26 +709,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: AppDimensions.spacing.xl,
-    paddingTop: AppDimensions.spacing.lg,
-    paddingBottom: AppDimensions.spacing.md,
+    paddingVertical: AppDimensions.spacing.lg,
   },
 
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: AppDimensions.spacing.sm,
+    flex: 1,
   },
 
   headerTitle: {
-    fontSize: 28,
+    fontSize: FontSizes.title,
     fontWeight: FontWeights.bold,
     color: "#1F2937",
   },
 
   settingsButton: {
     padding: AppDimensions.spacing.sm,
-    borderRadius: AppDimensions.radius.medium,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
 
   scrollView: {
@@ -706,16 +732,30 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingHorizontal: AppDimensions.spacing.xl,
-    paddingBottom: 100, // Aumentado para dar mais espaço no bottom
   },
 
   sectionContainer: {
-    marginBottom: AppDimensions.spacing.xl, // Aumentado de lg para xl
+    marginBottom: 0,
+  },
+
+  sectionSpacer: {
+    height: 20,
+  },
+
+  bottomSpacer: {
+    height: AppDimensions.spacing.xl * 2,
   },
 
   // Quick Actions
   quickActionsContainer: {
-    marginBottom: AppDimensions.spacing.lg,
+    backgroundColor: "#FFFFFF",
+    borderRadius: AppDimensions.radius.large,
+    padding: AppDimensions.spacing.lg,
+    shadowColor: "rgba(0, 0, 0, 0.08)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 3,
   },
 
   quickActionsHeader: {
@@ -733,34 +773,32 @@ const styles = StyleSheet.create({
 
   quickActionsList: {
     flexDirection: "row",
-    gap: AppDimensions.spacing.sm,
+    gap: AppDimensions.spacing.md,
   },
 
   quickActionItem: {
     flex: 1,
-    padding: AppDimensions.spacing.md,
-    borderRadius: AppDimensions.radius.large,
     alignItems: "center",
+    padding: AppDimensions.spacing.md,
+    borderRadius: AppDimensions.radius.medium,
     gap: AppDimensions.spacing.xs,
   },
 
   quickActionLabel: {
     fontSize: FontSizes.small,
     fontWeight: FontWeights.medium,
-    textAlign: "center",
   },
 
   // Mood Tracker Card
   moodTrackerCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: AppDimensions.radius.large,
-    padding: AppDimensions.spacing.xl,
-    marginBottom: AppDimensions.spacing.xl, // Aumentado
+    padding: AppDimensions.spacing.lg,
     shadowColor: "rgba(0, 0, 0, 0.08)",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 3,
   },
 
   cardHeader: {
@@ -771,13 +809,13 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: FontSizes.title,
-    fontWeight: FontWeights.bold,
+    fontSize: FontSizes.subtitle,
+    fontWeight: FontWeights.semibold,
     color: "#1F2937",
   },
 
   moodTrendContainer: {
-    marginBottom: AppDimensions.spacing.md,
+    marginBottom: AppDimensions.spacing.lg,
   },
 
   trendHeader: {
@@ -789,29 +827,28 @@ const styles = StyleSheet.create({
 
   trendLabel: {
     fontSize: FontSizes.body,
-    fontWeight: FontWeights.semibold,
-    color: "#1F2937",
+    fontWeight: FontWeights.medium,
+    color: "#374151",
   },
 
   trendPeriod: {
-    fontSize: FontSizes.caption,
-    color: "#64748B",
+    fontSize: FontSizes.small,
+    color: "#6B7280",
   },
 
   averageContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: AppDimensions.spacing.xl, // Aumentado
+    gap: AppDimensions.spacing.xs,
   },
 
   averageLabel: {
-    fontSize: 32,
-    fontWeight: FontWeights.normal,
-    color: "#1F2937",
+    fontSize: FontSizes.body,
+    color: "#6B7280",
   },
 
   averageValue: {
-    fontSize: 32,
+    fontSize: FontSizes.title,
     fontWeight: FontWeights.bold,
     color: Colors.primary,
   },
@@ -819,108 +856,148 @@ const styles = StyleSheet.create({
   trendIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginLeft: AppDimensions.spacing.sm,
+    gap: 2,
     backgroundColor: "rgba(5, 150, 105, 0.1)",
-    paddingHorizontal: AppDimensions.spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: AppDimensions.spacing.xs,
+    paddingVertical: 2,
     borderRadius: AppDimensions.radius.small,
   },
 
   trendPercentage: {
-    fontSize: FontSizes.caption,
-    fontWeight: FontWeights.semibold,
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
     color: "#059669",
   },
 
-  // 📊 CHART CONTAINER
   chartContainer: {
-    height: 200, // Aumentado de 160 para 200
-    marginBottom: AppDimensions.spacing.md,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: AppDimensions.spacing.xs,
+    marginTop: AppDimensions.spacing.md,
   },
 
-  // 🎯 POINTER LABEL
-  pointerLabel: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: AppDimensions.spacing.md,
-    paddingVertical: 8,
-    borderRadius: AppDimensions.radius.medium,
-    shadowColor: "rgba(0, 0, 0, 0.15)",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
-  pointerLabelText: {
-    color: "#FFFFFF",
-    fontSize: FontSizes.body,
-    fontWeight: FontWeights.semibold,
-  },
-
-  // Mood Selector
+  // Mood Selector - ATUALIZADO
   moodSelectorContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: AppDimensions.radius.large,
-    padding: AppDimensions.spacing.xl,
+    padding: AppDimensions.spacing.lg,
     shadowColor: "rgba(0, 0, 0, 0.08)",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
-    elevation: 2,
+    elevation: 3,
   },
 
   moodQuestionHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: AppDimensions.spacing.sm,
-    marginBottom: AppDimensions.spacing.lg,
+    marginBottom: AppDimensions.spacing.md,
   },
 
   moodQuestion: {
-    fontSize: FontSizes.title,
-    fontWeight: FontWeights.bold,
+    fontSize: FontSizes.subtitle,
+    fontWeight: FontWeights.semibold,
     color: "#1F2937",
   },
 
-  moodGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: AppDimensions.spacing.sm,
+  moodCarouselWrapper: {
+    marginHorizontal: -AppDimensions.spacing.lg,
+    marginBottom: AppDimensions.spacing.md,
+    height: 150,
+    marginTop: 16,
+    paddingHorizontal: 10,
   },
 
-  moodOption: {
-    width:
-      (width -
-        AppDimensions.spacing.xl * 2 -
-        AppDimensions.spacing.sm * 2 -
-        AppDimensions.spacing.xl * 2) /
-      2,
-    height: 90,
+  moodCarousel: {
+    width: width,
+    height: 130,
+  },
+
+  moodCarouselItem: {
+    width: 110,
+    height: 110,
+    marginHorizontal: 5, // Espaçamento horizontal de 10px total
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  moodCarouselItemSelected: {
+    transform: [{ scale: 1.1 }], // Scale aumentado para 1.1
+  },
+
+  moodItemGradient: {
+    flex: 1,
     borderRadius: AppDimensions.radius.large,
     justifyContent: "center",
     alignItems: "center",
-    gap: AppDimensions.spacing.xs,
+    padding: AppDimensions.spacing.sm,
     borderWidth: 2,
     borderColor: "transparent",
+    width: "100%",
+    height: "100%",
+    shadowColor: "rgba(0, 0, 0, 0.08)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
-  moodOptionSelected: {
+  moodItemGradientSelected: {
     borderColor: Colors.primary,
-    transform: [{ scale: 0.98 }],
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 5,
   },
 
-  moodLabel: {
-    fontSize: FontSizes.body,
+  moodIconContainer: {
+    alignItems: "center",
+    gap: 4,
+  },
+
+  moodEmoji: {
+    fontSize: 24,
+  },
+
+  moodCarouselLabel: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    textAlign: "center",
+    marginTop: 4,
+  },
+
+  moodCarouselLabelSelected: {
     fontWeight: FontWeights.semibold,
   },
 
-  // Wellness Insights
+  moodSelectedFeedback: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: AppDimensions.spacing.xs,
+    backgroundColor: "rgba(34, 111, 156, 0.1)",
+    paddingHorizontal: AppDimensions.spacing.md,
+    paddingVertical: AppDimensions.spacing.xs,
+    borderRadius: AppDimensions.radius.medium,
+  },
+
+  moodSelectedText: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    color: Colors.primary,
+  },
+
+  // Wellness Insights - CARROSSEL INFINITO
   insightContainer: {
-    marginBottom: AppDimensions.spacing.xl,
+    backgroundColor: "#FFFFFF",
+    borderRadius: AppDimensions.radius.large,
+    padding: AppDimensions.spacing.lg,
+    shadowColor: "rgba(0, 0, 0, 0.08)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 3,
   },
 
   insightHeader: {
@@ -931,45 +1008,48 @@ const styles = StyleSheet.create({
   },
 
   insightTitle: {
-    fontSize: FontSizes.title,
-    fontWeight: FontWeights.bold,
+    fontSize: FontSizes.subtitle,
+    fontWeight: FontWeights.semibold,
     color: "#1F2937",
   },
 
-  insightGrid: {
-    gap: AppDimensions.spacing.md,
+  insightCarouselWrapper: {
+    marginHorizontal: -AppDimensions.spacing.lg,
   },
 
-  // Cards de Insight
+  insightCarousel: {
+    width: width,
+    height: 180,
+  },
+
   insightCard: {
-    borderRadius: AppDimensions.radius.large,
-    overflow: "hidden",
-    shadowColor: "rgba(0, 0, 0, 0.12)",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 8,
+    width: width * 0.75, // 75% da largura da tela
+    height: 160,
+    paddingHorizontal: AppDimensions.spacing.sm,
   },
 
   insightCardGradient: {
+    flex: 1,
+    borderRadius: AppDimensions.radius.large,
     padding: AppDimensions.spacing.lg,
-    minHeight: 140,
+    justifyContent: "space-between",
+    shadowColor: "rgba(0, 0, 0, 0.1)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   insightCardHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: AppDimensions.spacing.md,
+    alignItems: "flex-start",
+    gap: AppDimensions.spacing.sm,
   },
 
   insightIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: AppDimensions.spacing.md,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    padding: AppDimensions.spacing.sm,
+    borderRadius: AppDimensions.radius.medium,
   },
 
   insightCardInfo: {
@@ -985,31 +1065,28 @@ const styles = StyleSheet.create({
 
   insightCardSubtitle: {
     fontSize: FontSizes.small,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: "rgba(255, 255, 255, 0.9)",
   },
 
   insightValueContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginBottom: AppDimensions.spacing.md,
+    gap: 4,
   },
 
   insightMainValue: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: FontWeights.bold,
     color: "#FFFFFF",
-    lineHeight: 40,
   },
 
   insightValueUnit: {
     fontSize: FontSizes.body,
-    fontWeight: FontWeights.medium,
     color: "rgba(255, 255, 255, 0.9)",
-    marginLeft: AppDimensions.spacing.xs,
   },
 
   progressContainer: {
-    marginBottom: AppDimensions.spacing.sm,
+    marginVertical: AppDimensions.spacing.xs,
   },
 
   progressTrack: {
@@ -1023,23 +1100,16 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#FFFFFF",
     borderRadius: 3,
-    transformOrigin: "left center",
   },
 
   insightFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
 
   trendContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingHorizontal: AppDimensions.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: AppDimensions.radius.small,
   },
 
   trendText: {
@@ -1051,44 +1121,37 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
+    paddingHorizontal: AppDimensions.spacing.lg,
     paddingVertical: AppDimensions.spacing.md,
-    paddingHorizontal: AppDimensions.spacing.xl,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    shadowColor: "rgba(0, 0, 0, 0.05)",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 5,
   },
 
   navItem: {
     flex: 1,
     alignItems: "center",
-    gap: 4,
+    gap: AppDimensions.spacing.xs,
   },
 
   navIconActive: {
     backgroundColor: Colors.primary,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-
-  navLabelActive: {
-    fontSize: FontSizes.small,
-    fontWeight: FontWeights.semibold,
-    color: Colors.primary,
+    padding: AppDimensions.spacing.xs,
+    borderRadius: AppDimensions.radius.small,
   },
 
   navLabel: {
-    fontSize: FontSizes.small,
+    fontSize: FontSizes.caption,
     color: "#94A3B8",
+  },
+
+  navLabelActive: {
+    fontSize: FontSizes.caption,
+    color: Colors.primary,
+    fontWeight: FontWeights.medium,
   },
 });
